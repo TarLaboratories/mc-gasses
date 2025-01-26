@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "tartech",
+  "version": "${version}",
+  "name": "TarTech",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/tartech/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "org.tarlaboratories.tartech.client.TartechClient"
+    ],
+    "main": [
+      "org.tarlaboratories.tartech.Tartech"
+    ],
+    "fabric-datagen": [
+      "org.tarlaboratories.tartech.client.datagen.TartechDataGenerator"
+    ]
+  },
+  "mixins": [
+    "tartech.mixins.json",
+    {
+      "config": "tartech.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}

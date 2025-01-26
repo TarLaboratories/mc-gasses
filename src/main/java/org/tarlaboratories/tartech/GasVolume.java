@@ -1,0 +1,88 @@
+package org.tarlaboratories.tartech;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import org.tarlaboratories.tartech.chemistry.Chemical;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class GasVolume {
+    protected int volume;
+    protected double total_gas;
+    protected double radioactivity;
+    protected HashMap<Chemical, Double> contents;
+
+    public static final Codec<GasVolume> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.INT.fieldOf("volume").forGetter(GasVolume::getVolume),
+            Codec.DOUBLE.fieldOf("total_gas").forGetter(GasVolume::getTotalGas),
+            Codec.DOUBLE.fieldOf("radioactivity").forGetter(GasVolume::getRadioactivity),
+            Codec.unboundedMap(Chemical.CODEC, Codec.DOUBLE).fieldOf("contents").forGetter(GasVolume::getContents)
+    ).apply(instance, GasVolume::new));
+
+    public GasVolume() {
+        volume = 0;
+        total_gas = 0;
+        radioactivity = 0;
+        contents = new HashMap<>();
+    }
+
+    public GasVolume(int volume, double total_gas, double radioactivity, Map<Chemical, Double> contents) {
+        this.volume = volume;
+        this.total_gas = total_gas;
+        this.radioactivity = radioactivity;
+        this.contents = new HashMap<>(contents);
+    }
+
+    public GasVolume addGas(Chemical c, double amount) {
+        total_gas += amount;
+        if (contents.containsKey(c))
+            contents.put(c, contents.get(c) + amount);
+        else
+            contents.put(c, amount);
+        return this;
+    }
+
+    public double removeGas(Chemical c, double amount) {
+        if (contents.containsKey(c) && contents.get(c) >= amount) {
+            contents.put(c, contents.get(c) - amount);
+            total_gas -= amount;
+            return amount;
+        } else if (contents.containsKey(c)) {
+            double tmp = contents.get(c);
+            contents.put(c, 0d);
+            total_gas -= tmp;
+            return tmp;
+        } else return 0;
+    }
+
+    public double getPressure() {
+        return total_gas/volume;
+    }
+
+    public double getRadioactivity() {
+        return radioactivity;
+    }
+
+    public GasVolume setRadioactivity(double r) {
+        radioactivity = r;
+        return this;
+    }
+
+    public double getTotalGas() {
+        return total_gas;
+    }
+
+    public double getGasAmount(Chemical gas) {
+        if (contents.containsKey(gas)) return contents.get(gas);
+        return 0;
+    }
+
+    public int getVolume() {
+        return volume;
+    }
+
+    public HashMap<Chemical, Double> getContents() {
+        return contents;
+    }
+}
