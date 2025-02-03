@@ -258,9 +258,8 @@ public class DataEntity extends MobEntity {
         }
     }
 
-    protected static int getMiddleY(World world) {
-        return -100;
-        //return world.getHeight()/2 - world.getBottomY();
+    protected static int getMiddleY(@NotNull World world) {
+        return world.getHeight()/2 - world.getBottomY();
     }
 
     protected static DataEntity getEntityForChunk(@NotNull ChunkPos chunkPos, World world) {
