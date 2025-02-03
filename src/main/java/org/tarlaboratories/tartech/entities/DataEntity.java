@@ -260,7 +260,7 @@ public class DataEntity extends MobEntity {
     }
 
     protected static int getMiddleY(@NotNull World world) {
-        return world.getHeight()/2 - world.getBottomY();
+        return world.getHeight()/2 + world.getBottomY();
     }
 
     protected static DataEntity getEntityForChunk(@NotNull ChunkPos chunkPos, World world) {
@@ -284,9 +284,9 @@ public class DataEntity extends MobEntity {
         DataEntity.currentlyInitializing.add(chunkPos);
         DataEntity entity = new DataEntity(DATA_ENTITY, world);
         world.spawnEntity(entity);
-        entity.setPosition(entity_pos.toCenterPos());
+        entity.setPosition(entity_pos.toBottomCenterPos());
         entity.updateVolumesInChunk();
-        LOGGER.debug("new data entity is at BlockPos {}", entity_pos);
+        LOGGER.info("new data entity is at BlockPos {}", entity_pos);
         DataEntity.currentlyInitializing.remove(chunkPos);
         return entity;
     }
