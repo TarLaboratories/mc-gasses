@@ -11,6 +11,7 @@ public class ChemicalPart {
     public static final ChemicalPart HYDROGEN = primitiveOf("H");
     public static final ChemicalPart OXYGEN = primitiveOf("O");
     public static final ChemicalPart WATER = primitiveOf("H").addElement(ChemicalElement.OXYGEN, 1);
+    public static final ChemicalPart SULFUR_DIOXIDE = primitiveOf("O").addElement(ChemicalElement.OXYGEN, 1);
 
     public static final Codec<ChemicalPart> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.list(Codec.pair(ChemicalElement.CODEC, Codec.INT)).fieldOf("contents").forGetter(ChemicalPart::getContents)
@@ -37,5 +38,15 @@ public class ChemicalPart {
 
     public List<Pair<ChemicalElement, Integer>> getContents() {
         return List.copyOf(contents);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder s = new StringBuilder();
+        for (Pair<ChemicalElement, Integer> e : this.contents) {
+            s.append(e.getFirst().getElement());
+            if (e.getSecond() > 1) s.append(e.getSecond().toString());
+        }
+        return s.toString();
     }
 }

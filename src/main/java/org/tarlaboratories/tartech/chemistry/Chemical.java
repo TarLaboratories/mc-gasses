@@ -10,6 +10,7 @@ public class Chemical {
     public static final Chemical HYDROGEN = primitiveOf("H");
     public static final Chemical OXYGEN = primitiveOf("O");
     public static final Chemical WATER = new Chemical(ChemicalPart.WATER);
+    public static final Chemical SULFUR_DIOXIDE = new Chemical(ChemicalPart.SULFUR_DIOXIDE);
 
     public static final Codec<Chemical> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.list(ChemicalPart.CODEC).fieldOf("contents").forGetter(Chemical::getContents)
@@ -35,5 +36,22 @@ public class Chemical {
 
     public List<ChemicalPart> getContents() {
         return List.copyOf(contents);
+    }
+
+    public Chemical add(ChemicalPart part) {
+        this.contents.add(part);
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        if (this.contents.size() == 1) {
+            for (ChemicalPart c : this.contents) return c.toString();
+        }
+        StringBuilder s = new StringBuilder();
+        for (ChemicalPart c : this.contents) {
+            s.append("(").append(c.toString()).append(")");
+        }
+        return s.toString();
     }
 }

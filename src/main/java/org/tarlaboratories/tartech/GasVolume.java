@@ -11,12 +11,14 @@ public class GasVolume {
     protected int volume;
     protected double total_gas;
     protected double radioactivity;
+    protected double temperature;
     protected HashMap<Chemical, Double> contents;
 
     public static final Codec<GasVolume> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.fieldOf("volume").forGetter(GasVolume::getVolume),
             Codec.DOUBLE.fieldOf("total_gas").forGetter(GasVolume::getTotalGas),
             Codec.DOUBLE.fieldOf("radioactivity").forGetter(GasVolume::getRadioactivity),
+            Codec.DOUBLE.fieldOf("temperature").forGetter(GasVolume::getTemperature),
             Codec.unboundedMap(Chemical.CODEC, Codec.DOUBLE).fieldOf("contents").forGetter(GasVolume::getContents)
     ).apply(instance, GasVolume::new));
 
@@ -27,10 +29,11 @@ public class GasVolume {
         contents = new HashMap<>();
     }
 
-    public GasVolume(int volume, double total_gas, double radioactivity, Map<Chemical, Double> contents) {
+    public GasVolume(int volume, double total_gas, double radioactivity, double temperature, Map<Chemical, Double> contents) {
         this.volume = volume;
         this.total_gas = total_gas;
         this.radioactivity = radioactivity;
+        this.temperature = temperature;
         this.contents = new HashMap<>(contents);
     }
 
@@ -56,8 +59,23 @@ public class GasVolume {
         } else return 0;
     }
 
+    public GasVolume multiplyContentsBy(double k) {
+        this.contents.replaceAll((g, v) -> v * k);
+        this.total_gas *= k;
+        return this;
+    }
+
     public double getPressure() {
         return total_gas/volume;
+    }
+
+    public double getTemperature() {
+        return temperature;
+    }
+
+    public GasVolume setTemperature(double temperature) {
+        this.temperature = temperature;
+        return this;
     }
 
     public double getRadioactivity() {
@@ -84,5 +102,34 @@ public class GasVolume {
 
     public HashMap<Chemical, Double> getContents() {
         return contents;
+    }
+
+    public GasVolume addVolume(int volume) {
+        this.volume += volume;
+        return this;
+    }
+
+    public void mergeWith(GasVolume other) {
+        this.volume += other.getVolume();
+        this.radioactivity = (this.radioactivity + other.radioactivity)/2;
+        this.total_gas += other.getTotalGas();
+        this.temperature = (this.temperature + other.temperature)/2;
+        for (Chemical gas : other.getContents().keySet()) {
+            this.addGas(gas, other.getContents().get(gas));
+        }
+    }
+
+    public static GasVolume copyOf(GasVolume gasVolume) {
+        return new GasVolume(gasVolume.getVolume(), gasVolume.getTotalGas(), gasVolume.getRadioactivity(), gasVolume.getTemperature(), new HashMap<>(gasVolume.getContents()));
+    }
+
+    public GasVolume copy() {
+        return copyOf(this);
+    }
+
+    public GasVolume getPart(int size) {
+        GasVolume out = this.copy();
+        out.addVolume(size - out.getVolume());
+        return out;
     }
 }
