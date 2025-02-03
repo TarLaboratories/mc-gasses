@@ -39,11 +39,11 @@ public class ModEntities {
     public static void initialize() {
         FabricDefaultAttributeRegistry.register(DATA_ENTITY, DataEntity.createMobAttributes().add(EntityAttributes.GRAVITY, 0));
         UseBlockCallback.EVENT.register((player, world, hand, blockHitResult) -> {
-            DataEntity.updateVolumeAtPos(blockHitResult.getBlockPos(), world);
+            //DataEntity.updateVolumeAtPos(blockHitResult.getBlockPos(), world);
             return ActionResult.PASS;
         });
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
-            DataEntity.updateVolumeAtPos(pos, world);
+            //DataEntity.updateVolumeAtPos(pos, world);
             return ActionResult.PASS;
         });
         UseItemCallback.EVENT.register((player, world, hand) -> {

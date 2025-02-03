@@ -28,7 +28,9 @@ public class GasAnalyzerItem extends Item {
         player.sendMessage(Text.of(String.format("Temperature: %f", data.getTemperature())), false);
         player.sendMessage(Text.of(String.format("Pressure: %f", data.getPressure())), false);
         if (data.getVolume() <= 1000)
-            player.sendMessage(Text.of(String.format("Volume: %d B", data.getVolume())), true);
+            player.sendMessage(Text.of(String.format("Volume: %d B", data.getVolume())), false);
+        else
+            player.sendMessage(Text.of("Volume: >1000 B"), false);
         player.sendMessage(Text.of("Gasses present in this volume:"), false);
         for (Chemical gas : data.getContents().keySet()) {
             if (data.getVolume() > 1000) player.sendMessage(Text.of(String.format("%s: %.2f%%", gas.toString(), data.getGasAmount(gas) * 100 / data.getVolume())), false);

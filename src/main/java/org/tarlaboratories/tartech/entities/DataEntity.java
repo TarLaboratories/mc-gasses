@@ -240,6 +240,7 @@ public class DataEntity extends MobEntity {
     }
 
     protected void updateVolumesInChunk() {
+        LOGGER.info("initializing gas data for chunk {}", this.getChunkPos());
         this.initializeData();
         HashSet<BlockPos> tmp = new HashSet<>();
         int cur_volume_id = 0;
