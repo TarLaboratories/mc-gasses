@@ -204,15 +204,7 @@ public class DataEntity extends MobEntity {
     }
 
     protected void updateVolumeAtPos(@NotNull BlockPos pos) {
-        int volume_id = this.getVolumeIdAt(pos);
-        GasVolume gas_vol_in_pos = this.getGasVolumeAt(pos).getPart(1);
-        if (volume_id != -1) this.getGasVolumeAt(pos).substractGasVolume(gas_vol_in_pos);
-        Set<Integer> connected_volume_ids = new HashSet<>();
-        for (BlockPos neighbour : this.getConnectedBlocks(pos)) {
-            connected_volume_ids.add(this.getVolumeIdAt(neighbour));
-        }
-        for (Integer vol_id : connected_volume_ids) gas_vol_in_pos.mergeWith(this.gas_data.getOrDefault(vol_id, new GasVolume()));
-        for (Integer vol_id : connected_volume_ids) this.gas_data.put(vol_id, gas_vol_in_pos);
+        //TODO: add update logic
     }
 
     public static void updateVolumeAtPos(@NotNull BlockPos pos, @NotNull World world) {
