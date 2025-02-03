@@ -112,6 +112,7 @@ public class GasVolume {
     }
 
     public void mergeWith(GasVolume other) {
+        if (this == other) return;
         this.volume += other.getVolume();
         this.radioactivity = (this.radioactivity + other.radioactivity)/2;
         this.total_gas += other.getTotalGas();
