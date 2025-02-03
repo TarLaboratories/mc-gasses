@@ -211,7 +211,7 @@ public class DataEntity extends MobEntity {
         for (BlockPos neighbour : this.getConnectedBlocks(pos)) {
             connected_volume_ids.add(this.getVolumeIdAt(neighbour));
         }
-        for (Integer vol_id : connected_volume_ids) gas_vol_in_pos.mergeWith(this.gas_data.get(vol_id));
+        for (Integer vol_id : connected_volume_ids) gas_vol_in_pos.mergeWith(this.gas_data.getOrDefault(vol_id, new GasVolume()));
         for (Integer vol_id : connected_volume_ids) this.gas_data.put(vol_id, gas_vol_in_pos);
     }
 
