@@ -2,6 +2,8 @@ package org.tarlaboratories.tartech;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 
 import java.util.HashMap;
@@ -53,7 +55,7 @@ public class GasVolume {
             return amount;
         } else if (contents.containsKey(c)) {
             double tmp = contents.get(c);
-            contents.put(c, 0d);
+            contents.remove(c);
             total_gas -= tmp;
             return tmp;
         } else return 0;
@@ -119,7 +121,8 @@ public class GasVolume {
         }
     }
 
-    public static GasVolume copyOf(GasVolume gasVolume) {
+    @Contract("_ -> new")
+    public static @NotNull GasVolume copyOf(@NotNull GasVolume gasVolume) {
         return new GasVolume(gasVolume.getVolume(), gasVolume.getTotalGas(), gasVolume.getRadioactivity(), gasVolume.getTemperature(), new HashMap<>(gasVolume.getContents()));
     }
 
@@ -130,6 +133,16 @@ public class GasVolume {
     public GasVolume getPart(int size) {
         GasVolume out = this.copy();
         out.addVolume(size - out.getVolume());
+        for (Chemical gas : out.getContents().keySet()) {
+            out.addGas(gas, -out.getGasAmount(gas) + out.getGasAmount(gas)*out.getVolume()/this.getVolume());
+        }
         return out;
+    }
+
+    public void substractGasVolume(@NotNull GasVolume gasVolInPos) {
+        this.volume -= gasVolInPos.getVolume();
+        for (Chemical gas : this.getContents().keySet()) {
+            this.removeGas(gas, gasVolInPos.getGasAmount(gas));
+        }
     }
 }

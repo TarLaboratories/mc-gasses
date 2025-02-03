@@ -35,7 +35,8 @@ import static org.tarlaboratories.tartech.ModEntities.DATA_ENTITY;
 public class DataEntity extends MobEntity {
     public static HashSet<ChunkPos> currentlyInitializing = new HashSet<>();
     protected ArrayList<ArrayList<ArrayList<Integer>>> data;
-    protected ArrayList<GasVolume> gas_data;
+    protected HashMap<Integer, GasVolume> gas_data;
+    protected Integer max_volume_id = 0;
     private boolean initialized_data = false;
     private final DynamicRegistryManager registryManager = this.getEntityWorld().getRegistryManager();
     protected final HashMap<DimensionType, GasVolume> DEFAULT_GAS_VOLUMES = new HashMap<>(Map.of(
@@ -80,7 +81,8 @@ public class DataEntity extends MobEntity {
             this.data.add(tmp2);
             i++;
         }
-        this.gas_data = new ArrayList<>(Codec.list(GasVolume.CODEC).parse(NbtOps.INSTANCE, nbt.get("gas_data")).result().orElse(List.of()));
+        this.gas_data = new HashMap<>(Codec.unboundedMap(Codec.INT, GasVolume.CODEC).parse(NbtOps.INSTANCE, nbt.get("gas_data")).result().orElse(Map.of()));
+        max_volume_id = this.gas_data.keySet().stream().max(Comparator.comparingInt((a) -> a)).orElse(-1);
         this.initialized_data = true;
     }
 
@@ -96,7 +98,7 @@ public class DataEntity extends MobEntity {
             }
             nbt.put(Integer.toString(i), yz);
         }
-        nbt.put("gas_data", Codec.list(GasVolume.CODEC).encodeStart(NbtOps.INSTANCE, gas_data).result().orElse(new NbtCompound()));
+        nbt.put("gas_data", Codec.unboundedMap(Codec.INT, GasVolume.CODEC).encodeStart(NbtOps.INSTANCE, gas_data).result().orElse(new NbtCompound()));
     }
 
     protected void initializeData() {
@@ -108,7 +110,7 @@ public class DataEntity extends MobEntity {
                 for (int k = 0; k < 16; k++) this.data.get(i).get(j).add(-1);
             }
         }
-        this.gas_data = new ArrayList<>();
+        this.gas_data = new HashMap<>();
         this.initialized_data = true;
     }
 
@@ -153,7 +155,7 @@ public class DataEntity extends MobEntity {
         if (tmp == -1 && this.canContainGas(pos)) {
             LOGGER.warn("volume id is -1, but block can contain gas at pos = {}", pos);
             return (new GasVolume()).addVolume(1);
-        }
+        } else if (tmp == -1) return new GasVolume();
         return this.gas_data.get(this.getVolumeIdAt(pos));
     }
 
@@ -202,28 +204,15 @@ public class DataEntity extends MobEntity {
     }
 
     protected void updateVolumeAtPos(@NotNull BlockPos pos) {
-        List<BlockPos> neighbours = this.getNeighboursWithSameGas(pos);
         int volume_id = this.getVolumeIdAt(pos);
-        if (volume_id == -1 && this.canContainGas(pos)) {
-            this.setVolumeIdAt(pos, this.gas_data.size());
-            this.gas_data.add(new GasVolume());
+        GasVolume gas_vol_in_pos = this.getGasVolumeAt(pos).getPart(1);
+        if (volume_id != -1) this.getGasVolumeAt(pos).substractGasVolume(gas_vol_in_pos);
+        Set<Integer> connected_volume_ids = new HashSet<>();
+        for (BlockPos neighbour : this.getConnectedBlocks(pos)) {
+            connected_volume_ids.add(this.getVolumeIdAt(neighbour));
         }
-        if (volume_id == -1) return;
-        for (BlockPos neighbour : neighbours) {
-            if (volume_id != this.getVolumeIdAt(neighbour)) {
-                this.gas_data.get(volume_id).mergeWith(this.getGasVolumeAt(pos));
-                this.gas_data.set(this.getVolumeIdAt(neighbour), new GasVolume());
-                this.setVolumeIdAt(neighbour, volume_id);
-            }
-        }
-        List<BlockPos> neighbours2 = this.getNeighboursWithDifferentGas(pos);
-        Set<BlockPos> tmp = new HashSet<>();
-        for (BlockPos neighbour : neighbours2) {
-            if (!neighbours.isEmpty()) tmp = this.getConnectedBlocks(neighbour, Predicate.isEqual(neighbours.get(0)), 5);
-            if (!neighbours.isEmpty() && tmp.contains(neighbours.get(0))) continue;
-            this.setVolumeAtPos(neighbour, this.gas_data.size());
-            this.gas_data.add(this.getGasVolumeAt(pos).getPart(tmp.size()));
-        }
+        for (Integer vol_id : connected_volume_ids) gas_vol_in_pos.mergeWith(this.gas_data.get(vol_id));
+        for (Integer vol_id : connected_volume_ids) this.gas_data.put(vol_id, gas_vol_in_pos);
     }
 
     public static void updateVolumeAtPos(@NotNull BlockPos pos, @NotNull World world) {
@@ -250,13 +239,14 @@ public class DataEntity extends MobEntity {
                     BlockPos tmp_pos = this.getChunkPos().getBlockPos(x, y, z);
                     if (!tmp.contains(tmp_pos)) {
                         HashSet<BlockPos> updated_blocks = new HashSet<>(this.setVolumeAtPos(tmp_pos, cur_volume_id));
-                        this.gas_data.add(this.getDefaultGasVolume().addVolume(updated_blocks.size()).multiplyContentsBy(updated_blocks.size()));
+                        this.gas_data.put(this.gas_data.size(), this.getDefaultGasVolume().addVolume(updated_blocks.size()).multiplyContentsBy(updated_blocks.size()));
                         tmp.addAll(updated_blocks);
                         cur_volume_id++;
                     }
                 }
             }
         }
+        this.max_volume_id = this.gas_data.size() - 1;
     }
 
     protected static int getMiddleY(@NotNull World world) {
