@@ -1,22 +1,76 @@
 package org.tarlaboratories.tartech;
 
+import com.mojang.datafixers.util.Pair;
+import com.mojang.serialization.Codec;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.PersistentState;
-import org.tarlaboratories.tartech.entities.GasData;
+import net.minecraft.world.PersistentStateManager;
+import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class StateSaverAndLoader extends PersistentState {
-    private HashMap<ChunkPos, GasData> data;
+    private static final Logger LOGGER = LogManager.getLogger();
+    private Map<ChunkPos, GasData> data;
+    private World world;
+    private static final Type<StateSaverAndLoader> type = new Type<>(
+            StateSaverAndLoader::new,
+            StateSaverAndLoader::createFromNbt,
+            null
+    );
+
+    private StateSaverAndLoader() {
+        this.data = new HashMap<>();
+    }
 
     @Override
     public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
         NbtCompound all_data = new NbtCompound();
         for (ChunkPos chunk : data.keySet()) {
-            all_data.put(chunk.toString(), data.get(chunk).writeCustomDataToNbt(););
+            NbtElement gas_data_nbt = GasData.CODEC.encodeStart(NbtOps.INSTANCE, this.data.get(chunk)).result().orElse(new NbtCompound());
+            all_data.put(chunk.toString(), gas_data_nbt);
         }
+        nbt.put("gas_data", all_data);
+        return nbt;
+    }
+
+    public static @NotNull StateSaverAndLoader createFromNbt(@NotNull NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
+        StateSaverAndLoader state = new StateSaverAndLoader();
+        state.data = new HashMap<>(Codec.unboundedMap(ChunkPos.CODEC, GasData.CODEC).decode(NbtOps.INSTANCE, nbt.get("gas_data")).result().orElse(Pair.of(new HashMap<>(), null)).getFirst());
+        return state;
+    }
+
+    public void updateWorldAndChunkData() {
+        this.data.forEach((chunkPos, gasData) -> gasData.chunk = world.getChunk(chunkPos.getStartPos()));
+    }
+
+    public void addGasDataForChunk(World world, @NotNull Chunk chunk) {
+        if (this.data.containsKey(chunk.getPos())) return;
+        GasData gasData = GasData.initializeVolumesInChunk(chunk, world);
+        this.data.put(chunk.getPos(), gasData);
+    }
+
+    public static @NotNull StateSaverAndLoader getWorldState(@NotNull ServerWorld world) {
+        PersistentStateManager persistentStateManager = world.getPersistentStateManager();
+        StateSaverAndLoader state = persistentStateManager.getOrCreate(type, Tartech.MOD_ID);
+        state.world = world;
+        state.updateWorldAndChunkData();
+        state.markDirty();
+        return state;
+    }
+
+    public @NotNull GasData getDataForChunk(@NotNull ChunkPos chunkPos) {
+        if (!this.data.containsKey(chunkPos)) this.addGasDataForChunk(this.world, this.world.getChunk(chunkPos.getStartPos()));
+        return this.data.get(chunkPos);
     }
 }
