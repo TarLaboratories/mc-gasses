@@ -3,16 +3,13 @@ package org.tarlaboratories.tartech.entities;
 import com.mojang.serialization.Codec;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
@@ -30,15 +27,15 @@ import org.tarlaboratories.tartech.chemistry.ChemicalElement;
 import java.util.*;
 import java.util.function.Predicate;
 
-import static org.tarlaboratories.tartech.ModEntities.DATA_ENTITY;
-
-public class DataEntity extends MobEntity {
+public class GasData {
     public static HashSet<ChunkPos> currentlyInitializing = new HashSet<>();
     protected ArrayList<ArrayList<ArrayList<Integer>>> data;
     protected HashMap<Integer, GasVolume> gas_data;
     protected Integer max_volume_id = 0;
     private boolean initialized_data = false;
-    private final DynamicRegistryManager registryManager = this.getEntityWorld().getRegistryManager();
+    protected World world;
+    protected ChunkPos chunkPos;
+    private final DynamicRegistryManager registryManager = this.getWorld().getRegistryManager();
     protected final HashMap<DimensionType, GasVolume> DEFAULT_GAS_VOLUMES = new HashMap<>(Map.of(
             Objects.requireNonNull(registryManager.getOrThrow(RegistryKeys.DIMENSION_TYPE).get(DimensionTypes.OVERWORLD)), (new GasVolume()).addGas(Chemical.OXYGEN, 0.2).addGas(Chemical.primitiveOf(ChemicalElement.NITROGEN.getElement()), 0.8).setTemperature(20),
             Objects.requireNonNull(registryManager.getOrThrow(RegistryKeys.DIMENSION_TYPE).get(DimensionTypes.THE_NETHER)), (new GasVolume()).addGas(Chemical.SULFUR_DIOXIDE, 0.5).setTemperature(80),
@@ -47,21 +44,19 @@ public class DataEntity extends MobEntity {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    public DataEntity(EntityType<? extends MobEntity> entityType, World world) {
-        super(entityType, world);
+    public GasData(World world, ChunkPos chunkPos) {
+        this.world = world;
+        this.chunkPos = chunkPos;
+    }
+    
+    public World getWorld() {
+        return this.world;
     }
 
-    @Override
-    public boolean damage(ServerWorld world, DamageSource source, float amount) {
-        return false;
+    public ChunkPos getChunkPos() {
+        return this.chunkPos;
     }
-
-    @Override
-    public boolean collidesWith(Entity other) {
-        return false;
-    }
-
-    @Override
+    
     public void readCustomDataFromNbt(@NotNull NbtCompound nbt) {
         this.data = new ArrayList<>();
         int i = 0;
@@ -85,8 +80,7 @@ public class DataEntity extends MobEntity {
         max_volume_id = this.gas_data.keySet().stream().max(Comparator.comparingInt((a) -> a)).orElse(-1);
         this.initialized_data = true;
     }
-
-    @Override
+    
     public void writeCustomDataToNbt(NbtCompound nbt) {
         if (!this.initialized_data) this.initializeData();
         for (int i = 0; i < this.data.size(); i++) {
@@ -105,7 +99,7 @@ public class DataEntity extends MobEntity {
         this.data = new ArrayList<>();
         for (int i = 0; i < 16; i++) {
             this.data.add(new ArrayList<>());
-            for (int j = 0; j < this.getEntityWorld().getHeight(); j++) {
+            for (int j = 0; j < this.getWorld().getHeight(); j++) {
                 this.data.get(i).add(new ArrayList<>());
                 for (int k = 0; k < 16; k++) this.data.get(i).get(j).add(-1);
             }
@@ -138,16 +132,16 @@ public class DataEntity extends MobEntity {
 
     protected boolean isInSameChunk(@NotNull BlockPos pos) {
         return this.getChunkPos().getStartX() <= pos.getX() && this.getChunkPos().getStartZ() <= pos.getZ() &&
-                this.getChunkPos().getEndX() > pos.getX() && this.getChunkPos().getEndZ() > pos.getZ();
+                this.getChunkPos().getEndX() >= pos.getX() && this.getChunkPos().getEndZ() >= pos.getZ();
     }
 
     protected boolean isAboveHeightLimit(@NotNull BlockPos pos) {
-        return this.getEntityWorld().getBottomY() + this.getEntityWorld().getHeight() <= pos.getY();
+        return this.getWorld().getBottomY() + this.getWorld().getHeight() <= pos.getY();
     }
 
     protected int getVolumeIdAt(@NotNull BlockPos pos) {
         if (!this.initialized_data) initializeData();
-        return this.data.get(pos.getX() - this.getChunkPos().getStartX()).get(Math.min(Math.max(pos.getY() - this.getEntityWorld().getBottomY(), 0), 255)).get(pos.getZ() - this.getChunkPos().getStartZ());
+        return this.data.get(pos.getX() - this.getChunkPos().getStartX()).get(Math.min(Math.max(pos.getY() - this.getWorld().getBottomY(), 0), 255)).get(pos.getZ() - this.getChunkPos().getStartZ());
     }
 
     protected GasVolume getGasVolumeAt(@NotNull BlockPos pos) {
@@ -160,14 +154,14 @@ public class DataEntity extends MobEntity {
     }
 
     public static GasVolume getGasVolumeAt(@NotNull BlockPos pos, @NotNull World world) {
-        DataEntity tmp = getEntityForChunk(world.getChunk(pos).getPos(), world);
+        GasData tmp = getEntityForChunk(world.getChunk(pos).getPos(), world);
         if (tmp == null) return new GasVolume();
         return tmp.getGasVolumeAt(pos);
     }
 
     protected void setVolumeIdAt(@NotNull BlockPos pos, int id) {
         if (!this.initialized_data) initializeData();
-        this.data.get(pos.getX() - this.getChunkPos().getStartX()).get(pos.getY() - this.getEntityWorld().getBottomY()).set(pos.getZ() - this.getChunkPos().getStartZ(), id);
+        this.data.get(pos.getX() - this.getChunkPos().getStartX()).get(pos.getY() - this.getWorld().getBottomY()).set(pos.getZ() - this.getChunkPos().getStartZ(), id);
     }
 
     protected Set<BlockPos> setVolumeAtPos(@NotNull BlockPos pos, int id) {
@@ -208,7 +202,7 @@ public class DataEntity extends MobEntity {
     }
 
     public static void updateVolumeAtPos(@NotNull BlockPos pos, @NotNull World world) {
-        DataEntity tmp = getEntityForChunk(world.getChunk(pos).getPos(), world);
+        GasData tmp = getEntityForChunk(world.getChunk(pos).getPos(), world);
         if (tmp != null) tmp.updateVolumeAtPos(pos);
     }
 
@@ -226,7 +220,7 @@ public class DataEntity extends MobEntity {
         HashSet<BlockPos> tmp = new HashSet<>();
         int cur_volume_id = 0;
         for (int x = 0; x < 16; x++) {
-            for (int y = this.getEntityWorld().getBottomY(); y < this.getEntityWorld().getHeight() + this.getEntityWorld().getBottomY(); y++) {
+            for (int y = this.getWorld().getBottomY(); y < this.getWorld().getHeight() + this.getWorld().getBottomY(); y++) {
                 for (int z = 0; z < 16; z++) {
                     BlockPos tmp_pos = this.getChunkPos().getBlockPos(x, y, z);
                     if (!tmp.contains(tmp_pos)) {
@@ -245,31 +239,29 @@ public class DataEntity extends MobEntity {
         return world.getHeight()/2 + world.getBottomY();
     }
 
-    protected static DataEntity getEntityForChunk(@NotNull ChunkPos chunkPos, World world) {
+    protected static GasData getEntityForChunk(@NotNull ChunkPos chunkPos, World world) {
         BlockPos entity_pos = chunkPos.getCenterAtY(getMiddleY(world));
-        List<DataEntity> tmp = world.getEntitiesByClass(DataEntity.class, Box.enclosing(entity_pos, entity_pos), (e) -> true);
+        List<GasData> tmp = null; //TODO: eee
         assert tmp.size() < 2;
         if (tmp.isEmpty()) {
             return initializeVolumesInChunk(chunkPos, world);
         } else return tmp.get(0);
     }
 
-    public static @Nullable DataEntity initializeVolumesInChunk(@NotNull ChunkPos chunkPos, World world) {
+    public static @Nullable GasData initializeVolumesInChunk(@NotNull ChunkPos chunkPos, World world) {
         BlockPos entity_pos = chunkPos.getCenterAtY(getMiddleY(world));
-        List<DataEntity> tmp = world.getEntitiesByClass(DataEntity.class, Box.enclosing(entity_pos, entity_pos), (e) -> true);
+        List<GasData> tmp = null; //TODO: add method to get gas data for chunk (!!!the mod will crash otherwise)
         assert tmp.size() < 2;
         if (!tmp.isEmpty()) return tmp.get(0);
-        if (DataEntity.currentlyInitializing.contains(chunkPos)) {
+        if (GasData.currentlyInitializing.contains(chunkPos)) {
             LOGGER.warn("Attempt to initialize volumes in chunk {} in world {} while they are already being initialized", chunkPos, world);
             return null;
         }
-        DataEntity.currentlyInitializing.add(chunkPos);
-        DataEntity entity = new DataEntity(DATA_ENTITY, world);
-        world.spawnEntity(entity);
-        entity.setPosition(entity_pos.toBottomCenterPos());
+        GasData.currentlyInitializing.add(chunkPos);
+        GasData entity = new GasData(world, chunkPos);
         entity.updateVolumesInChunk();
         LOGGER.info("new data entity is at BlockPos {}", entity_pos);
-        DataEntity.currentlyInitializing.remove(chunkPos);
+        GasData.currentlyInitializing.remove(chunkPos);
         return entity;
     }
 }

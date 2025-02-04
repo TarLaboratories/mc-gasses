@@ -9,7 +9,7 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.tarlaboratories.tartech.GasVolume;
 import org.tarlaboratories.tartech.chemistry.Chemical;
-import org.tarlaboratories.tartech.entities.DataEntity;
+import org.tarlaboratories.tartech.entities.GasData;
 
 public class GasAnalyzerItem extends Item {
     public GasAnalyzerItem(Settings settings) {
@@ -19,11 +19,11 @@ public class GasAnalyzerItem extends Item {
     @Override
     public ActionResult use(@NotNull World world, PlayerEntity player, Hand hand) {
         if (world.isClient()) return ActionResult.PASS;
-        if (DataEntity.currentlyInitializing.contains(player.getChunkPos())) {
+        if (GasData.currentlyInitializing.contains(player.getChunkPos())) {
             player.sendMessage(Text.of("Please wait..."), true);
             return ActionResult.FAIL;
         }
-        GasVolume data = DataEntity.getGasVolumeAt(player.getBlockPos(), world);
+        GasVolume data = GasData.getGasVolumeAt(player.getBlockPos(), world);
         player.sendMessage(Text.of("Gas info:"), false);
         player.sendMessage(Text.of(String.format("Temperature: %f", data.getTemperature())), false);
         player.sendMessage(Text.of(String.format("Pressure: %f", data.getPressure())), false);
