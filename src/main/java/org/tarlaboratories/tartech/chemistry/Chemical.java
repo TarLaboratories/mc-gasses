@@ -2,9 +2,9 @@ package org.tarlaboratories.tartech.chemistry;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class Chemical {
     public static final Chemical HYDROGEN = primitiveOf("H");
@@ -13,44 +13,80 @@ public class Chemical {
     public static final Chemical SULFUR_DIOXIDE = new Chemical(ChemicalPart.SULFUR_DIOXIDE);
 
     public static final Codec<Chemical> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.list(ChemicalPart.CODEC).fieldOf("contents").forGetter(Chemical::getContents)
+            Codec.unboundedMap(ChemicalPart.CODEC, Codec.INT).fieldOf("contents").forGetter(Chemical::getContents)
     ).apply(instance, Chemical::new));
 
     public static Chemical primitiveOf(String element) {
         return new Chemical(ChemicalPart.primitiveOf(element));
     }
-    public HashSet<ChemicalPart> contents;
+    public Map<ChemicalPart, Integer> contents;
 
     public Chemical() {
-        contents = new HashSet<>();
+        contents = new HashMap<>();
     }
 
-    public Chemical(ChemicalPart... a) {
-        contents = new HashSet<>();
-        contents.addAll(List.of(a));
+    public Chemical(ChemicalPart @NotNull ... a) {
+        contents = new HashMap<>();
+        for (ChemicalPart i : a) contents.put(i, 1);
     }
 
-    public Chemical(List<ChemicalPart> a) {
-        contents = new HashSet<>(a);
+    public Chemical(Map<ChemicalPart, Integer> a) {
+        contents = new HashMap<>(a);
     }
 
-    public List<ChemicalPart> getContents() {
-        return List.copyOf(contents);
+    public static @NotNull Chemical fromString(@NotNull String s) throws InvalidChemicalStringException {
+        int chemicalPartStart = -1;
+        Chemical out = new Chemical();
+        ChemicalPart tmp = null;
+        String num = "";
+        for (int i = 0; i < s.length(); i++) {
+            switch (s.charAt(i)) {
+                case '(':
+                    if (chemicalPartStart != -1) throw new InvalidChemicalStringException(String.format("Unexpected '(' in string at position %d", i));
+                    chemicalPartStart = i + 1;
+                    if (tmp != null) {
+                        if (!Objects.equals(num, "")) out.add(tmp, Integer.parseInt(num));
+                        else out.add(tmp);
+                        tmp = null;
+                    }
+                    num = "";
+                    break;
+                case ')':
+                    if (chemicalPartStart == -1) throw new InvalidChemicalStringException(String.format("Unexpected ')' in string at position %d", i));
+                    tmp = ChemicalPart.fromString(s.substring(chemicalPartStart, i - 1));
+                    break;
+                default:
+                    if (Character.isDigit(s.charAt(i))) {
+                        num += s.charAt(i);
+                    }
+            }
+        }
+        return out;
+    }
+
+    public Map<ChemicalPart, Integer> getContents() {
+        return Map.copyOf(contents);
     }
 
     public Chemical add(ChemicalPart part) {
-        this.contents.add(part);
+        this.contents.put(part, 1);
+        return this;
+    }
+
+    public Chemical add(ChemicalPart part, int amount) {
+        this.contents.put(part, amount);
         return this;
     }
 
     @Override
     public String toString() {
         if (this.contents.size() == 1) {
-            for (ChemicalPart c : this.contents) return c.toString();
+            for (ChemicalPart c : this.contents.keySet()) if (contents.get(c) == 1) return c.toString();
         }
         StringBuilder s = new StringBuilder();
-        for (ChemicalPart c : this.contents) {
+        for (ChemicalPart c : this.contents.keySet()) {
             s.append("(").append(c.toString()).append(")");
+            if (contents.get(c) > 1) s.append(contents.get(c).toString());
         }
         return s.toString();
     }

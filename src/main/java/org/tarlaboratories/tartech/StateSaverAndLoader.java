@@ -7,6 +7,7 @@ import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.PersistentStateManager;
@@ -15,6 +16,7 @@ import net.minecraft.world.chunk.Chunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.tarlaboratories.tartech.chemistry.Chemical;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,10 +56,27 @@ public class StateSaverAndLoader extends PersistentState {
         this.data.forEach((chunkPos, gasData) -> gasData.chunk = world.getChunk(chunkPos.getStartPos()));
     }
 
-    public void addGasDataForChunk(World world, @NotNull Chunk chunk) {
+    public void addGasDataForChunk(@NotNull Chunk chunk) {
         if (this.data.containsKey(chunk.getPos())) return;
         GasData gasData = GasData.initializeVolumesInChunk(chunk, world);
         this.data.put(chunk.getPos(), gasData);
+    }
+
+    public void reinitializeDataAtPos(@NotNull BlockPos pos) {
+        Chunk chunk = world.getChunk(pos);
+        GasData gasData = GasData.initializeVolumesInChunk(chunk, world);
+        this.data.put(chunk.getPos(), gasData);
+    }
+
+    public void addGasAtPos(@NotNull BlockPos pos, Chemical gas, double amount) {
+        this.getDataForChunk(world.getChunk(pos).getPos()).getGasVolumeAt(pos).addGas(gas, amount);
+    }
+
+    public void updateVolumeAtPos(@NotNull BlockPos pos) {
+        this.addGasDataForChunk(world.getChunk(pos));
+        GasData gasData = this.data.get(world.getChunk(pos).getPos());
+        gasData.updateVolumeAtPos(pos);
+        this.data.put(world.getChunk(pos).getPos(), gasData);
     }
 
     public static @NotNull StateSaverAndLoader getWorldState(@NotNull ServerWorld world) {
@@ -70,7 +89,7 @@ public class StateSaverAndLoader extends PersistentState {
     }
 
     public @NotNull GasData getDataForChunk(@NotNull ChunkPos chunkPos) {
-        if (!this.data.containsKey(chunkPos)) this.addGasDataForChunk(this.world, this.world.getChunk(chunkPos.getStartPos()));
+        if (!this.data.containsKey(chunkPos)) this.addGasDataForChunk(this.world.getChunk(chunkPos.getStartPos()));
         return this.data.get(chunkPos);
     }
 }

@@ -132,13 +132,13 @@ public class GasData {
         return this.data.get(pos.getX() - this.getChunkPos().getStartX()).get(Math.min(Math.max(pos.getY() - this.chunk.getBottomY(), 0), 255)).get(pos.getZ() - this.getChunkPos().getStartZ());
     }
 
-    protected GasVolume getGasVolumeAt(@NotNull BlockPos pos) {
+    protected @NotNull GasVolume getGasVolumeAt(@NotNull BlockPos pos) {
         int tmp = this.getVolumeIdAt(pos);
         if (tmp == -1 && this.canContainGas(pos)) {
             LOGGER.warn("volume id is -1, but block can contain gas at pos = {}", pos);
             return (new GasVolume()).addVolume(1);
         } else if (tmp == -1) return new GasVolume();
-        return this.gas_data.get(this.getVolumeIdAt(pos));
+        return this.gas_data.getOrDefault(tmp, new GasVolume());
     }
 
     public static GasVolume getGasVolumeAt(@NotNull BlockPos pos, @NotNull ServerWorld world) {
@@ -185,7 +185,28 @@ public class GasData {
     }
 
     protected void updateVolumeAtPos(@NotNull BlockPos pos) {
-        //TODO: add update logic
+        int old_volume_id = this.getVolumeIdAt(pos);
+        Set<BlockPos> connected_blocks = this.getConnectedBlocks(pos);
+        GasVolume gasVolume = new GasVolume();
+        for (BlockPos tmp_pos : connected_blocks) {
+            gasVolume.mergeWith(this.getGasVolumeAt(tmp_pos).getPart(1));
+            this.setVolumeIdAt(tmp_pos, max_volume_id + 1);
+        }
+        LOGGER.info("idk, pressure is {}", gasVolume.getPressure());
+        this.gas_data.put(max_volume_id + 1, gasVolume);
+        max_volume_id++;
+        /*
+        for (int x = 0; x < 16; x++) {
+            for (int y = 0; y < this.chunk.getHeight(); y++) {
+                for (int z = 0; z < 16; z++) {
+                    if (!connected_blocks.contains(chunkPos.getBlockPos(x, y - chunk.getBottomY(), z)) && this.data.get(x).get(y).get(z) == old_volume_id) {
+                        this.data.get(x).get(y).set(z, max_volume_id + 1);
+                        max_volume_id++;
+                        this.updateVolumeAtPos(chunkPos.getBlockPos(x, y - chunk.getBottomY(), z));
+                    }
+                }
+            }
+        }*/
     }
 
     public static void updateVolumeAtPos(@NotNull BlockPos pos, @NotNull ServerWorld world) {
@@ -218,7 +239,7 @@ public class GasData {
                 }
             }
         }
-        this.max_volume_id = this.gas_data.size() - 1;
+        this.max_volume_id = this.gas_data.size();
     }
 
     protected static @NotNull GasData getEntityForChunk(@NotNull Chunk chunk, ServerWorld world) {

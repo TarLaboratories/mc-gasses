@@ -111,11 +111,9 @@ public class GasVolume {
         return this;
     }
 
-    public void mergeWith(GasVolume other) {
-        if (this == other) return;
+    public void mergeWith(@NotNull GasVolume other) {
         this.volume += other.getVolume();
         this.radioactivity = (this.radioactivity + other.radioactivity)/2;
-        this.total_gas += other.getTotalGas();
         this.temperature = (this.temperature + other.temperature)/2;
         for (Chemical gas : other.getContents().keySet()) {
             this.addGas(gas, other.getContents().get(gas));
@@ -132,10 +130,12 @@ public class GasVolume {
     }
 
     public GasVolume getPart(int size) {
-        GasVolume out = this.copy();
-        out.addVolume(size - out.getVolume());
-        for (Chemical gas : out.getContents().keySet()) {
-            out.addGas(gas, -out.getGasAmount(gas) + out.getGasAmount(gas)*out.getVolume()/this.getVolume());
+        GasVolume out = new GasVolume();
+        out.temperature = temperature;
+        out.radioactivity = radioactivity;
+        out.volume = size;
+        for (Chemical gas : this.getContents().keySet()) {
+            out.addGas(gas, this.getGasAmount(gas)*size/this.getVolume());
         }
         return out;
     }

@@ -3,6 +3,7 @@ package org.tarlaboratories.tartech.chemistry;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.mojang.datafixers.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,38 @@ public class ChemicalPart {
 
     public ChemicalPart(List<Pair<ChemicalElement, Integer>> contents) {
         this.contents = new HashSet<>(contents);
+    }
+
+    public static @NotNull ChemicalPart fromString(@NotNull String s) throws InvalidChemicalStringException {
+        ChemicalPart out = new ChemicalPart();
+        int elementStart = -1;
+        String num = "";
+        try {
+            for (int i = 0; i < s.length(); i++) {
+                if (!Character.isLetterOrDigit(s.charAt(i))) throw new InvalidChemicalStringException(String.format("Unexpected character '%s' at position %d", s.charAt(i), i));
+                if (Character.isUpperCase(s.charAt(i))) {
+                    if (elementStart != -1) {
+                        if (!num.isBlank()) out.addElement(new ChemicalElement(s.substring(elementStart, i - 1)), Integer.parseInt(num));
+                        else out.addElement(new ChemicalElement(s.substring(elementStart, i - 1)), 1);
+                        elementStart = i;
+                    } else {
+                        if (i != 0) throw new InvalidChemicalStringException("Unexpected characters at start of string");
+                        elementStart = 0;
+                    }
+                    num = "";
+                }
+                if (Character.isDigit(s.charAt(i))) {
+                    num += s.charAt(i);
+                }
+            }
+            if (elementStart != -1) {
+                if (!num.isBlank()) out.addElement(new ChemicalElement(s.substring(elementStart, s.length() - 1)), Integer.parseInt(num));
+                else out.addElement(new ChemicalElement(s.substring(elementStart, s.length() - 1)), 1);
+            }
+        } catch (NumberFormatException ex) {
+            throw new InvalidChemicalStringException(ex.getMessage());
+        }
+        return out;
     }
 
     public ChemicalPart addElement(ChemicalElement element, int amount) {

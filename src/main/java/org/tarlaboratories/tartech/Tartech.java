@@ -10,6 +10,7 @@ public class Tartech implements ModInitializer {
         ModItems.initialize();
         ModBlocks.initialize();
         ModEntities.initialize();
+        ModCommands.initialize();
         ModEventListeners.initialize();
     }
 }
