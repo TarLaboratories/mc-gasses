@@ -98,7 +98,7 @@ public class GasData {
         this.data = new ArrayList<>();
         for (int i = 0; i < 16; i++) {
             this.data.add(new ArrayList<>());
-            for (int j = 0; j < chunk.getHeight(); j++) {
+            for (int j = 0; j <= chunk.getHeight(); j++) {
                 this.data.get(i).add(new ArrayList<>());
                 for (int k = 0; k < 16; k++) this.data.get(i).get(j).add(-1);
             }
@@ -124,7 +124,7 @@ public class GasData {
     }
 
     protected boolean isAboveHeightLimit(@NotNull BlockPos pos) {
-        return this.chunk.getBottomY() + chunk.getHeight() <= pos.getY();
+        return this.chunk.getBottomY() + chunk.getHeight() <= (pos.getY() + 100);
     }
 
     protected int getVolumeIdAt(@NotNull BlockPos pos) {
@@ -158,6 +158,7 @@ public class GasData {
     }
 
     protected boolean canContainGas(@NotNull BlockPos pos) {
+        assert !this.chunk.isOutOfHeightLimit(pos);
         return !this.getNeighboursWithSameGas(pos).isEmpty() || this.chunk.getBlockState(pos).isAir();
     }
 
@@ -183,10 +184,9 @@ public class GasData {
     protected Set<BlockPos> getConnectedBlocks(@NotNull BlockPos pos) {
         return this.getConnectedBlocks(pos, (p) -> false, 1000);
     }
-
     protected void updateVolumeAtPos(@NotNull BlockPos pos) {
         int old_volume_id = this.getVolumeIdAt(pos);
-        Set<BlockPos> connected_blocks = this.getConnectedBlocks(pos);
+        Set<BlockPos> connected_blocks = this.getConnectedBlocks(pos); //, (p) -> false, 6);
         GasVolume gasVolume = new GasVolume();
         for (BlockPos tmp_pos : connected_blocks) {
             gasVolume.mergeWith(this.getGasVolumeAt(tmp_pos).getPart(1));
@@ -227,7 +227,7 @@ public class GasData {
         HashSet<BlockPos> tmp = new HashSet<>();
         int cur_volume_id = 0;
         for (int x = 0; x < 16; x++) {
-            for (int y = this.chunk.getBottomY(); y < this.chunk.getHeight() + this.chunk.getBottomY(); y++) {
+            for (int y = this.chunk.getBottomY(); y <= this.chunk.getHeight() + this.chunk.getBottomY(); y++) {
                 for (int z = 0; z < 16; z++) {
                     BlockPos tmp_pos = this.getChunkPos().getBlockPos(x, y, z);
                     if (!tmp.contains(tmp_pos)) {

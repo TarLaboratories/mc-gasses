@@ -1,6 +1,7 @@
 package org.tarlaboratories.tartech;
 
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.minecraft.item.Items;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import org.apache.logging.log4j.LogManager;
@@ -15,7 +16,7 @@ public class ModEventListeners {
                 StateSaverAndLoader state = StateSaverAndLoader.getWorldState(world);
                 if (player.getStackInHand(hand).isOf(ModItems.TEST_ITEM)) {
                     state.reinitializeDataAtPos(player.getBlockPos());
-                } else state.updateVolumeAtPos(player.getBlockPos());
+                } else if (player.getStackInHand(hand).isOf(Items.STICK)) state.updateVolumeAtPos(player.getBlockPos());
             }
             return ActionResult.PASS;
         }));
