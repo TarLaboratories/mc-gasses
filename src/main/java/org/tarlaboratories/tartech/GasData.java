@@ -129,7 +129,7 @@ public class GasData {
 
     protected int getVolumeIdAt(@NotNull BlockPos pos) {
         if (!this.initialized_data) initializeData();
-        return this.data.get(pos.getX() - this.getChunkPos().getStartX()).get(Math.min(Math.max(pos.getY() - this.chunk.getBottomY(), 0), 255)).get(pos.getZ() - this.getChunkPos().getStartZ());
+        return this.data.get(pos.getX() - this.getChunkPos().getStartX()).get(pos.getY() - this.chunk.getBottomY()).get(pos.getZ() - this.getChunkPos().getStartZ());
     }
 
     protected @NotNull GasVolume getGasVolumeAt(@NotNull BlockPos pos) {
@@ -141,7 +141,7 @@ public class GasData {
         return this.gas_data.getOrDefault(tmp, new GasVolume());
     }
 
-    public static GasVolume getGasVolumeAt(@NotNull BlockPos pos, @NotNull ServerWorld world) {
+    public static @NotNull GasVolume getGasVolumeAt(@NotNull BlockPos pos, @NotNull ServerWorld world) {
         GasData tmp = getEntityForChunk(world.getChunk(pos), world);
         return tmp.getGasVolumeAt(pos);
     }
@@ -184,34 +184,33 @@ public class GasData {
     protected Set<BlockPos> getConnectedBlocks(@NotNull BlockPos pos) {
         return this.getConnectedBlocks(pos, (p) -> false, 1000);
     }
-    protected void updateVolumeAtPos(@NotNull BlockPos pos) {
+    
+    protected Set<BlockPos> updateVolumeAtPos(@NotNull BlockPos pos) {
         int old_volume_id = this.getVolumeIdAt(pos);
-        Set<BlockPos> connected_blocks = this.getConnectedBlocks(pos); //, (p) -> false, 6);
+        Set<BlockPos> connected_blocks = this.getConnectedBlocks(pos);
         GasVolume gasVolume = new GasVolume();
+        gasVolume.setTemperature(this.getDefaultGasVolume().getTemperature());
+        gasVolume.setRadioactivity(this.getDefaultGasVolume().getRadioactivity());
         for (BlockPos tmp_pos : connected_blocks) {
             gasVolume.mergeWith(this.getGasVolumeAt(tmp_pos).getPart(1));
             this.setVolumeIdAt(tmp_pos, max_volume_id + 1);
         }
-        LOGGER.info("idk, pressure is {}", gasVolume.getPressure());
         this.gas_data.put(max_volume_id + 1, gasVolume);
         max_volume_id++;
-        /*
+        return connected_blocks;
+    }
+    
+    protected void updateVolumesInChunk(@NotNull BlockPos pos) {
+        Set<BlockPos> tmp = new HashSet<>();
         for (int x = 0; x < 16; x++) {
-            for (int y = 0; y < this.chunk.getHeight(); y++) {
+            for (int y = this.chunk.getBottomY(); y <= this.chunk.getBottomY() + this.chunk.getHeight(); y++) {
                 for (int z = 0; z < 16; z++) {
-                    if (!connected_blocks.contains(chunkPos.getBlockPos(x, y - chunk.getBottomY(), z)) && this.data.get(x).get(y).get(z) == old_volume_id) {
-                        this.data.get(x).get(y).set(z, max_volume_id + 1);
-                        max_volume_id++;
-                        this.updateVolumeAtPos(chunkPos.getBlockPos(x, y - chunk.getBottomY(), z));
-                    }
+                    BlockPos tmp_pos = this.chunkPos.getBlockPos(x, y, z);
+                    if (tmp.contains(tmp_pos)) continue;
+                    tmp.addAll(this.updateVolumeAtPos(tmp_pos));
                 }
             }
-        }*/
-    }
-
-    public static void updateVolumeAtPos(@NotNull BlockPos pos, @NotNull ServerWorld world) {
-        GasData tmp = getEntityForChunk(world.getChunk(pos), world);
-        tmp.updateVolumeAtPos(pos);
+        }
     }
 
     public GasVolume getDefaultGasVolume() {
@@ -222,7 +221,7 @@ public class GasData {
         }
     }
 
-    protected void updateVolumesInChunk() {
+    protected void initializeVolumesInChunk() {
         this.initializeData();
         HashSet<BlockPos> tmp = new HashSet<>();
         int cur_volume_id = 0;
@@ -252,7 +251,7 @@ public class GasData {
         }
         GasData.currentlyInitializing.add(chunk.getPos());
         GasData data = new GasData(world, chunk);
-        data.updateVolumesInChunk();
+        data.initializeVolumesInChunk();
         LOGGER.info("initializing gas data for chunk {}", chunk.getPos());
         GasData.currentlyInitializing.remove(chunk.getPos());
         return data;

@@ -20,6 +20,10 @@ public class ModItems {
 
     public static final RegistryKey<Item> TEST_ITEM_KEY = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(Tartech.MOD_ID, "test_item"));
     public static final Item TEST_ITEM = register(new Item(new Item.Settings().registryKey(TEST_ITEM_KEY)), TEST_ITEM_KEY);
+
+    public static final RegistryKey<Item> GAS_TEST_ITEM_KEY = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(Tartech.MOD_ID, "gas_test_item"));
+    public static final Item GAS_TEST_ITEM = register(new Item(new Item.Settings().registryKey(GAS_TEST_ITEM_KEY)), GAS_TEST_ITEM_KEY);
+
     public static final RegistryKey<Item> GAS_ANALYSER_KEY = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(Tartech.MOD_ID, "gas_analyser"));
     public static final GasAnalyzerItem GAS_ANALYZER_ITEM = register(new GasAnalyzerItem(new Item.Settings().registryKey(GAS_ANALYSER_KEY)), GAS_ANALYSER_KEY);
 

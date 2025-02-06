@@ -53,13 +53,19 @@ public class Chemical {
                     break;
                 case ')':
                     if (chemicalPartStart == -1) throw new InvalidChemicalStringException(String.format("Unexpected ')' in string at position %d", i));
-                    tmp = ChemicalPart.fromString(s.substring(chemicalPartStart, i - 1));
+                    tmp = ChemicalPart.fromString(s.substring(chemicalPartStart, i));
+                    chemicalPartStart = -1;
                     break;
                 default:
-                    if (Character.isDigit(s.charAt(i))) {
+                    if (Character.isDigit(s.charAt(i)) && chemicalPartStart == -1) {
                         num += s.charAt(i);
                     }
             }
+        }
+        if (chemicalPartStart != -1) throw new InvalidChemicalStringException(String.format("Unexpected '(' in string at position %d", s.length() - 1));
+        if (tmp != null) {
+            if (!Objects.equals(num, "")) out.add(tmp, Integer.parseInt(num));
+            else out.add(tmp);
         }
         return out;
     }
@@ -89,5 +95,17 @@ public class Chemical {
             if (contents.get(c) > 1) s.append(contents.get(c).toString());
         }
         return s.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Chemical chemical = (Chemical) o;
+        return com.google.common.base.Objects.equal(contents, chemical.contents);
+    }
+
+    @Override
+    public int hashCode() {
+        return com.google.common.base.Objects.hashCode(contents);
     }
 }

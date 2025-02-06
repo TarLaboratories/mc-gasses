@@ -1,5 +1,6 @@
 package org.tarlaboratories.tartech.chemistry;
 
+import com.google.common.base.Objects;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.mojang.datafixers.util.Pair;
@@ -34,16 +35,18 @@ public class ChemicalPart {
 
     public static @NotNull ChemicalPart fromString(@NotNull String s) throws InvalidChemicalStringException {
         ChemicalPart out = new ChemicalPart();
-        int elementStart = -1;
+        int elementStart = -1, elementEnd = -1;
         String num = "";
         try {
             for (int i = 0; i < s.length(); i++) {
                 if (!Character.isLetterOrDigit(s.charAt(i))) throw new InvalidChemicalStringException(String.format("Unexpected character '%s' at position %d", s.charAt(i), i));
                 if (Character.isUpperCase(s.charAt(i))) {
                     if (elementStart != -1) {
-                        if (!num.isBlank()) out.addElement(new ChemicalElement(s.substring(elementStart, i - 1)), Integer.parseInt(num));
-                        else out.addElement(new ChemicalElement(s.substring(elementStart, i - 1)), 1);
+                        if (elementEnd == -1) elementEnd = i;
+                        if (!num.isBlank()) out.addElement(new ChemicalElement(s.substring(elementStart, elementEnd)), Integer.parseInt(num));
+                        else out.addElement(new ChemicalElement(s.substring(elementStart, elementEnd)), 1);
                         elementStart = i;
+                        elementEnd = -1;
                     } else {
                         if (i != 0) throw new InvalidChemicalStringException("Unexpected characters at start of string");
                         elementStart = 0;
@@ -52,11 +55,13 @@ public class ChemicalPart {
                 }
                 if (Character.isDigit(s.charAt(i))) {
                     num += s.charAt(i);
+                    if (elementEnd == -1) elementEnd = i;
                 }
             }
             if (elementStart != -1) {
-                if (!num.isBlank()) out.addElement(new ChemicalElement(s.substring(elementStart, s.length() - 1)), Integer.parseInt(num));
-                else out.addElement(new ChemicalElement(s.substring(elementStart, s.length() - 1)), 1);
+                if (elementEnd == -1) elementEnd = s.length();
+                if (!num.isBlank()) out.addElement(new ChemicalElement(s.substring(elementStart, elementEnd)), Integer.parseInt(num));
+                else out.addElement(new ChemicalElement(s.substring(elementStart, elementEnd)), 1);
             }
         } catch (NumberFormatException ex) {
             throw new InvalidChemicalStringException(ex.getMessage());
@@ -81,5 +86,17 @@ public class ChemicalPart {
             if (e.getSecond() > 1) s.append(e.getSecond().toString());
         }
         return s.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        ChemicalPart that = (ChemicalPart) o;
+        return Objects.equal(contents, that.contents);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(contents);
     }
 }

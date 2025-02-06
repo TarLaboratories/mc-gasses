@@ -72,10 +72,10 @@ public class StateSaverAndLoader extends PersistentState {
         this.getDataForChunk(world.getChunk(pos).getPos()).getGasVolumeAt(pos).addGas(gas, amount);
     }
 
-    public void updateVolumeAtPos(@NotNull BlockPos pos) {
+    public void updateVolumesInChunk(@NotNull BlockPos pos) {
         this.addGasDataForChunk(world.getChunk(pos));
         GasData gasData = this.data.get(world.getChunk(pos).getPos());
-        gasData.updateVolumeAtPos(pos);
+        gasData.updateVolumesInChunk(pos);
         this.data.put(world.getChunk(pos).getPos(), gasData);
     }
 

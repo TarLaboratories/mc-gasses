@@ -6,6 +6,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.tarlaboratories.tartech.chemistry.Chemical;
 
 public class ModEventListeners {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -16,7 +17,9 @@ public class ModEventListeners {
                 StateSaverAndLoader state = StateSaverAndLoader.getWorldState(world);
                 if (player.getStackInHand(hand).isOf(ModItems.TEST_ITEM)) {
                     state.reinitializeDataAtPos(player.getBlockPos());
-                } else if (player.getStackInHand(hand).isOf(Items.STICK)) state.updateVolumeAtPos(player.getBlockPos());
+                } else if (player.getStackInHand(hand).isOf(Items.STICK)) state.updateVolumesInChunk(player.getBlockPos());
+                else if(player.getStackInHand(hand).isOf(ModItems.GAS_TEST_ITEM)) state.reinitializeDataAtPos(player.getBlockPos());
+                else if (player.getStackInHand(hand).isOf(Items.BOWL)) state.addGasAtPos(player.getBlockPos(), Chemical.WATER, 10);
             }
             return ActionResult.PASS;
         }));
