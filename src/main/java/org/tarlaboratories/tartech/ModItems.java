@@ -30,7 +30,7 @@ public class ModItems {
     public static final RegistryKey<ItemGroup> MAIN_ITEM_GROUP_KEY = RegistryKey.of(RegistryKeys.ITEM_GROUP, Identifier.of(Tartech.MOD_ID, "main_item_group"));
     public static final ItemGroup MAIN_ITEM_GROUP = FabricItemGroup.builder()
             .icon(() -> new ItemStack(TEST_ITEM))
-            .displayName(Text.translatable("main_item_group.tartech"))
+            .displayName(Text.translatable("tartech.main_item_group"))
             .build();
 
     public static void initialize() {
@@ -38,6 +38,7 @@ public class ModItems {
         ItemGroupEvents.modifyEntriesEvent(MAIN_ITEM_GROUP_KEY).register((itemGroup) -> {
             itemGroup.add(TEST_ITEM);
             itemGroup.add(GAS_ANALYZER_ITEM);
+            itemGroup.add(GAS_TEST_ITEM);
         });
     }
 }
