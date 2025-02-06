@@ -124,7 +124,7 @@ public class GasData {
     }
 
     protected boolean isAboveHeightLimit(@NotNull BlockPos pos) {
-        return this.chunk.getBottomY() + chunk.getHeight() <= (pos.getY() + 100);
+        return this.chunk.getBottomY() + chunk.getHeight() <= pos.getY();
     }
 
     protected int getVolumeIdAt(@NotNull BlockPos pos) {
@@ -184,7 +184,7 @@ public class GasData {
     protected Set<BlockPos> getConnectedBlocks(@NotNull BlockPos pos) {
         return this.getConnectedBlocks(pos, (p) -> false, 1000);
     }
-    
+
     protected Set<BlockPos> updateVolumeAtPos(@NotNull BlockPos pos) {
         int old_volume_id = this.getVolumeIdAt(pos);
         Set<BlockPos> connected_blocks = this.getConnectedBlocks(pos);
@@ -199,7 +199,7 @@ public class GasData {
         max_volume_id++;
         return connected_blocks;
     }
-    
+
     protected void updateVolumesInChunk(@NotNull BlockPos pos) {
         Set<BlockPos> tmp = new HashSet<>();
         for (int x = 0; x < 16; x++) {
