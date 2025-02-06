@@ -92,4 +92,8 @@ public class StateSaverAndLoader extends PersistentState {
         if (!this.data.containsKey(chunkPos)) this.addGasDataForChunk(this.world.getChunk(chunkPos.getStartPos()));
         return this.data.get(chunkPos);
     }
+    
+    public @NotNull GasVolume getGasVolumeAtPos(@NotNull BlockPos pos) {
+        return this.getDataForChunk(this.world.getChunk(pos).getPos()).getGasVolumeAt(pos);
+    }
 }
