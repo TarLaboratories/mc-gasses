@@ -105,7 +105,7 @@ public class ModCommands {
                     .then(CommandManager.literal("add")
                             .requires(IS_OPERATOR)
                             .then(CommandManager.argument("gas", ChemicalArgumentType.chemical())
-                                    .then(CommandManager.argument("amount", DoubleArgumentType.doubleArg(0))
+                                    .then(CommandManager.argument("amount", DoubleArgumentType.doubleArg())
                                             .executes(ADD_GAS_COMMAND)
                                             .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
                                                     .executes(ADD_GAS_AT_POS_COMMAND)))))
