@@ -33,7 +33,6 @@ public class StateSaverAndLoader extends PersistentState {
             null
     );
 
-    private static final Function<String, ChunkPos> stringToChunkPos = (s) -> new ChunkPos(Integer.parseInt(s.split(":")[0]), Integer.parseInt(s.split(":")[1]));
     private static final Function<ChunkPos, String> chunkPosToString = (p) -> String.format("%d:%d", p.x, p.z);
 
     private Map<ChunkPos, GasData> getData() {

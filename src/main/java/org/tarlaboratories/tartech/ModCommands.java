@@ -94,6 +94,22 @@ public class ModCommands {
         return 0;
     };
 
+    public static final Command<ServerCommandSource> REINIT_GAS_COMMAND = (context) -> {
+        final ServerCommandSource source = context.getSource();
+        final StateSaverAndLoader state = StateSaverAndLoader.getWorldState(source.getWorld());
+        final BlockPos pos = source.getEntityOrThrow().getBlockPos();
+        state.reinitializeDataAtPos(pos);
+        return 0;
+    };
+
+    public static final Command<ServerCommandSource> REINIT_GAS_AT_POS_COMMAND = (context) -> {
+        final ServerCommandSource source = context.getSource();
+        final StateSaverAndLoader state = StateSaverAndLoader.getWorldState(source.getWorld());
+        final BlockPos pos = BlockPosArgumentType.getBlockPos(context, "pos");
+        state.reinitializeDataAtPos(pos);
+        return 0;
+    };
+
     public static void initialize() {
         ArgumentTypeRegistry.registerArgumentType(
                 Identifier.of(Tartech.MOD_ID, "chemical_argument_type"),
@@ -125,6 +141,11 @@ public class ModCommands {
                             .executes(UPDATE_GAS_COMMAND)
                             .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
                                     .executes(UPDATE_GAS_AT_POS_COMMAND)))
+                    .then(CommandManager.literal("regenerate")
+                            .requires(IS_OPERATOR)
+                            .executes(REINIT_GAS_COMMAND)
+                            .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
+                                    .executes(REINIT_GAS_AT_POS_COMMAND)))
             );
         });
     }
