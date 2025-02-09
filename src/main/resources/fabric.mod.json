@@ -18,6 +18,9 @@
     ],
     "fabric-datagen": [
       "org.tarlaboratories.tartech.client.datagen.TartechDataGenerator"
+    ],
+    "fabric-gametest": [
+      "org.tarlaboratories.tartech.GameTests"
     ]
   },
   "mixins": [
