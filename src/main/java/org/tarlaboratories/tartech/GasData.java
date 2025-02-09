@@ -65,6 +65,12 @@ public class GasData {
         this.chunkPos = pos;
     }
 
+    public void deleteNotNeededData() {
+        for (Integer i : this.gas_data.keySet()) {
+            if (i <= this.old_max_volume_id) this.gas_data.remove(i);
+        }
+    }
+
     protected Integer getOldMaxVolumeId() {
         return this.old_max_volume_id;
     }
@@ -213,8 +219,8 @@ public class GasData {
             for (int z = 0; z < 16; z++) {
                 for (int y = this.chunk.getBottomY(); y <= this.getHighestY(x, z); y++) {
                     BlockPos tmp_pos = this.chunkPos.getBlockPos(x, y, z);
-                    if (tmp.contains(tmp_pos)) continue;
-                    tmp.addAll(this.updateVolumeAtPos(tmp_pos));
+                    if (!this.canContainGas(tmp_pos)) this.setVolumeIdAt(tmp_pos, -1);
+                    else if (!tmp.contains(tmp_pos)) tmp.addAll(this.updateVolumeAtPos(tmp_pos));
                 }
             }
         }
@@ -236,7 +242,8 @@ public class GasData {
             for (int z = 0; z < 16; z++) {
                 for (int y = this.chunk.getBottomY(); y <= this.getHighestY(x, z); y++) {
                     BlockPos tmp_pos = this.getChunkPos().getBlockPos(x, y, z);
-                    if (!tmp.contains(tmp_pos)) {
+                    if (!this.canContainGas(tmp_pos)) this.setVolumeIdAt(tmp_pos, -1);
+                    else if (!tmp.contains(tmp_pos)) {
                         HashSet<BlockPos> updated_blocks = new HashSet<>(this.setVolumeAtPos(tmp_pos, cur_volume_id));
                         this.gas_data.put(this.gas_data.size(), this.getDefaultGasVolume().addVolume(updated_blocks.size()).multiplyContentsBy(updated_blocks.size()));
                         tmp.addAll(updated_blocks);

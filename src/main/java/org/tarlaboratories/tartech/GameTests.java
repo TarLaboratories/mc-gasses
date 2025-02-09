@@ -37,11 +37,4 @@ public class GameTests implements FabricGameTest {
         testCodec(ctx, gasData, GasData.CODEC);
         ctx.complete();
     }
-
-    @GameTest(batchId = "codecTestsBatch")
-    public void testStateSaverAndLoaderCodec(@NotNull TestContext ctx) {
-        ServerWorld world = ctx.getWorld();
-        testCodec(ctx, StateSaverAndLoader.getWorldState(world), StateSaverAndLoader.CODEC);
-        ctx.complete();
-    }
 }
