@@ -1,23 +1,23 @@
 package org.tarlaboratories.tartech;
 
+import com.google.common.base.Objects;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.block.BlockState;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.minecraft.world.Heightmap;
+import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.dimension.DimensionTypes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Range;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 import org.tarlaboratories.tartech.chemistry.ChemicalElement;
 
@@ -28,13 +28,16 @@ public class GasData {
     public static HashSet<ChunkPos> currentlyInitializing = new HashSet<>();
     protected List<List<List<Integer>>> data;
     protected Map<Integer, GasVolume> gas_data;
-    protected Integer max_volume_id = 0;
+    protected Integer max_volume_id = 0, old_max_volume_id = -2;
     private boolean initialized_data = false;
+    private static final Codec<Integer> INTEGER_CODEC = Codec.STRING.xmap(Integer::parseInt, Object::toString);
     public static final Codec<GasData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.list(Codec.list(Codec.list(Codec.INT))).fieldOf("data").forGetter(GasData::getData),
-            Codec.unboundedMap(Codec.INT, GasVolume.CODEC).fieldOf("gas_data").forGetter(GasData::getGasData),
+            Codec.unboundedMap(INTEGER_CODEC, GasVolume.CODEC).fieldOf("gas_data").forGetter(GasData::getGasData),
             Codec.INT.fieldOf("max_volume_id").forGetter(GasData::getMaxVolumeId),
-            Codec.BOOL.fieldOf("initialized_data").forGetter(GasData::isInitializedData)
+            Codec.INT.fieldOf("old_max_volume_id").forGetter(GasData::getOldMaxVolumeId),
+            Codec.BOOL.fieldOf("initialized_data").forGetter(GasData::isInitializedData),
+            ChunkPos.CODEC.fieldOf("chunk_pos").forGetter(GasData::getChunkPos)
     ).apply(instance, GasData::new));
     protected Chunk chunk;
     protected ChunkPos chunkPos;
@@ -47,17 +50,23 @@ public class GasData {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    public GasData(@NotNull World world, @NotNull Chunk chunk) {
+    public GasData(@NotNull WorldView world, @NotNull Chunk chunk) {
         this.chunk = chunk;
         this.chunkPos = chunk.getPos();
-        this.dimension = world.getDimensionEntry().getKey().orElse(DimensionTypes.OVERWORLD);
+        this.dimension = world.getRegistryManager().getOrThrow(RegistryKeys.DIMENSION_TYPE).getKey(world.getDimension()).orElseThrow();
     }
 
-    protected GasData(List<List<List<Integer>>> data, Map<Integer, GasVolume> gas_data, int max_volume_id, boolean initialized_data) {
+    protected GasData(List<List<List<Integer>>> data, Map<Integer, GasVolume> gas_data, int max_volume_id, int old_max_volume_id, boolean initialized_data, ChunkPos pos) {
         this.data = data;
         this.gas_data = gas_data;
         this.max_volume_id = max_volume_id;
+        this.old_max_volume_id = old_max_volume_id;
         this.initialized_data = initialized_data;
+        this.chunkPos = pos;
+    }
+
+    protected Integer getOldMaxVolumeId() {
+        return this.old_max_volume_id;
     }
 
     public ChunkPos getChunkPos() {
@@ -80,27 +89,13 @@ public class GasData {
         return initialized_data;
     }
 
-    public void writeCustomDataToNbt(NbtCompound nbt) {
-        if (!this.initialized_data) this.initializeData();
-        for (int i = 0; i < this.data.size(); i++) {
-            NbtCompound yz = new NbtCompound();
-            for (int j = 0; j < this.data.get(i).size(); j++) {
-                NbtCompound z = new NbtCompound();
-                for (int k = 0; k < this.data.get(i).get(j).size(); k++) z.putInt(Integer.toString(k), this.data.get(i).get(j).get(k));
-                yz.put(Integer.toString(j), z);
-            }
-            nbt.put(Integer.toString(i), yz);
-        }
-        nbt.put("gas_data", Codec.unboundedMap(Codec.INT, GasVolume.CODEC).encodeStart(NbtOps.INSTANCE, gas_data).result().orElse(new NbtCompound()));
-    }
-
     protected void initializeData() {
         this.data = new ArrayList<>();
         for (int i = 0; i < 16; i++) {
             this.data.add(new ArrayList<>());
             for (int j = 0; j <= chunk.getHeight(); j++) {
                 this.data.get(i).add(new ArrayList<>());
-                for (int k = 0; k < 16; k++) this.data.get(i).get(j).add(-1);
+                for (int k = 0; k < 16; k++) this.data.get(i).get(j).add(-2);
             }
         }
         this.gas_data = new HashMap<>();
@@ -138,6 +133,7 @@ public class GasData {
             LOGGER.warn("volume id is -1, but block can contain gas at pos = {}", pos);
             return (new GasVolume()).addVolume(1);
         } else if (tmp == -1) return new GasVolume();
+        else if (tmp <= old_max_volume_id) return this.getDefaultGasVolume().multiplyContentsBy(10000).addVolume(10000);
         return this.gas_data.getOrDefault(tmp, new GasVolume());
     }
 
@@ -162,7 +158,7 @@ public class GasData {
         return !this.getNeighboursWithSameGas(pos).isEmpty() || this.chunk.getBlockState(pos).isAir();
     }
 
-    protected Set<BlockPos> getConnectedBlocks(@NotNull BlockPos pos, @NotNull Predicate<BlockPos> predicate, @Range(from = 1, to = 1000) int max_dist) {
+    protected Set<BlockPos> getConnectedBlocks(@NotNull BlockPos pos, @NotNull Predicate<BlockPos> predicate) {
         Queue<BlockPos> q = new LinkedList<>();
         Set<BlockPos> visited = new HashSet<>();
         if (!this.isInSameChunk(pos) || this.isAboveHeightLimit(pos) || !this.canContainGas(pos)) return visited;
@@ -171,7 +167,7 @@ public class GasData {
             BlockPos tmp = q.poll();
             for (BlockPos neighbour : this.getNeighboursWithSameGas(tmp)) {
                 assert this.chunk.getBlockState(neighbour).isTransparent();
-                if (!visited.contains(neighbour) && pos.isWithinDistance(neighbour, max_dist)) {
+                if (!visited.contains(neighbour) && pos.isWithinDistance(neighbour, 1000)) {
                     q.offer(neighbour);
                     visited.add(neighbour);
                     if (predicate.test(neighbour)) return visited;
@@ -182,12 +178,22 @@ public class GasData {
     }
 
     protected Set<BlockPos> getConnectedBlocks(@NotNull BlockPos pos) {
-        return this.getConnectedBlocks(pos, (p) -> false, 1000);
+        return this.getConnectedBlocks(pos, (p) -> false);
+    }
+
+    protected int getHighestY(int x, int z) {
+        return this.chunk.getHeightmap(Heightmap.Type.MOTION_BLOCKING).get(x, z);
+    }
+
+    protected boolean canSeeSky(@NotNull BlockPos pos) {
+        return this.getHighestY(pos.getX() - this.chunkPos.getStartX(), pos.getZ() - this.chunkPos.getStartZ()) <= pos.getY();
     }
 
     protected Set<BlockPos> updateVolumeAtPos(@NotNull BlockPos pos) {
-        int old_volume_id = this.getVolumeIdAt(pos);
-        Set<BlockPos> connected_blocks = this.getConnectedBlocks(pos);
+        Set<BlockPos> connected_blocks = this.getConnectedBlocks(pos, this::canSeeSky);
+        if (connected_blocks.stream().anyMatch(this::canSeeSky)) {
+            return connected_blocks;
+        }
         GasVolume gasVolume = new GasVolume();
         gasVolume.setTemperature(this.getDefaultGasVolume().getTemperature());
         gasVolume.setRadioactivity(this.getDefaultGasVolume().getRadioactivity());
@@ -200,11 +206,12 @@ public class GasData {
         return connected_blocks;
     }
 
-    protected void updateVolumesInChunk(@NotNull BlockPos pos) {
+    protected void updateVolumesInChunk() {
+        this.old_max_volume_id = this.max_volume_id;
         Set<BlockPos> tmp = new HashSet<>();
         for (int x = 0; x < 16; x++) {
-            for (int y = this.chunk.getBottomY(); y <= this.chunk.getBottomY() + this.chunk.getHeight(); y++) {
-                for (int z = 0; z < 16; z++) {
+            for (int z = 0; z < 16; z++) {
+                for (int y = this.chunk.getBottomY(); y <= this.getHighestY(x, z); y++) {
                     BlockPos tmp_pos = this.chunkPos.getBlockPos(x, y, z);
                     if (tmp.contains(tmp_pos)) continue;
                     tmp.addAll(this.updateVolumeAtPos(tmp_pos));
@@ -226,8 +233,8 @@ public class GasData {
         HashSet<BlockPos> tmp = new HashSet<>();
         int cur_volume_id = 0;
         for (int x = 0; x < 16; x++) {
-            for (int y = this.chunk.getBottomY(); y <= this.chunk.getHeight() + this.chunk.getBottomY(); y++) {
-                for (int z = 0; z < 16; z++) {
+            for (int z = 0; z < 16; z++) {
+                for (int y = this.chunk.getBottomY(); y <= this.getHighestY(x, z); y++) {
                     BlockPos tmp_pos = this.getChunkPos().getBlockPos(x, y, z);
                     if (!tmp.contains(tmp_pos)) {
                         HashSet<BlockPos> updated_blocks = new HashSet<>(this.setVolumeAtPos(tmp_pos, cur_volume_id));
@@ -245,7 +252,7 @@ public class GasData {
         return StateSaverAndLoader.getWorldState(world).getDataForChunk(chunk.getPos());
     }
 
-    public static @NotNull GasData initializeVolumesInChunk(@NotNull Chunk chunk, World world) {
+    public static @NotNull GasData initializeVolumesInChunk(@NotNull Chunk chunk, WorldView world) {
         if (GasData.currentlyInitializing.contains(chunk.getPos())) {
             LOGGER.warn("Attempt to initialize volumes in chunk {} in world {} while they are already being initialized", chunk.getPos(), world);
         }
@@ -255,5 +262,17 @@ public class GasData {
         LOGGER.info("initializing gas data for chunk {}", chunk.getPos());
         GasData.currentlyInitializing.remove(chunk.getPos());
         return data;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        GasData gasData = (GasData) o;
+        return initialized_data == gasData.initialized_data && Objects.equal(data, gasData.data) && Objects.equal(gas_data, gasData.gas_data) && Objects.equal(max_volume_id, gasData.max_volume_id) && Objects.equal(chunkPos, gasData.chunkPos);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(data, gas_data, max_volume_id, initialized_data, chunkPos);
     }
 }

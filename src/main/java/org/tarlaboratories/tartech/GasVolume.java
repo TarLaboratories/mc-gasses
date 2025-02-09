@@ -1,5 +1,6 @@
 package org.tarlaboratories.tartech;
 
+import com.google.common.base.Objects;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import org.jetbrains.annotations.Contract;
@@ -48,17 +49,15 @@ public class GasVolume {
         return this;
     }
 
-    public double removeGas(Chemical c, double amount) {
+    public void removeGas(Chemical c, double amount) {
         if (contents.containsKey(c) && contents.get(c) >= amount) {
             contents.put(c, contents.get(c) - amount);
             total_gas -= amount;
-            return amount;
         } else if (contents.containsKey(c)) {
             double tmp = contents.get(c);
             contents.remove(c);
             total_gas -= tmp;
-            return tmp;
-        } else return 0;
+        }
     }
 
     public GasVolume multiplyContentsBy(double k) {
@@ -140,10 +139,15 @@ public class GasVolume {
         return out;
     }
 
-    public void substractGasVolume(@NotNull GasVolume gasVolInPos) {
-        this.volume -= gasVolInPos.getVolume();
-        for (Chemical gas : this.getContents().keySet()) {
-            this.removeGas(gas, gasVolInPos.getGasAmount(gas));
-        }
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        GasVolume gasVolume = (GasVolume) o;
+        return volume == gasVolume.volume && Double.compare(total_gas, gasVolume.total_gas) == 0 && Double.compare(radioactivity, gasVolume.radioactivity) == 0 && Double.compare(temperature, gasVolume.temperature) == 0 && Objects.equal(contents, gasVolume.contents);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(volume, total_gas, radioactivity, temperature, contents);
     }
 }

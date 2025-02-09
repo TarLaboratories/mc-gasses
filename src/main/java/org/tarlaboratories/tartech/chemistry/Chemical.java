@@ -1,7 +1,7 @@
 package org.tarlaboratories.tartech.chemistry;
 
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -12,11 +12,10 @@ public class Chemical {
     public static final Chemical WATER = new Chemical(ChemicalPart.WATER);
     public static final Chemical SULFUR_DIOXIDE = new Chemical(ChemicalPart.SULFUR_DIOXIDE);
 
-    public static final Codec<Chemical> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.unboundedMap(ChemicalPart.CODEC, Codec.INT).fieldOf("contents").forGetter(Chemical::getContents)
-    ).apply(instance, Chemical::new));
+    public static final Codec<Chemical> CODEC = Codec.STRING.xmap(Chemical::fromString, Chemical::toString);
 
-    public static Chemical primitiveOf(String element) {
+    @Contract("_ -> new")
+    public static @NotNull Chemical primitiveOf(String element) {
         return new Chemical(ChemicalPart.primitiveOf(element));
     }
     public Map<ChemicalPart, Integer> contents;
@@ -35,21 +34,25 @@ public class Chemical {
     }
 
     public static @NotNull Chemical fromString(@NotNull String s) throws InvalidChemicalStringException {
+        if (s.isEmpty()) throw new InvalidChemicalStringException("Expected non-empty string");
+        if (s.charAt(0) != '(') {
+            return new Chemical(ChemicalPart.fromString(s));
+        }
         int chemicalPartStart = -1;
         Chemical out = new Chemical();
         ChemicalPart tmp = null;
-        String num = "";
+        StringBuilder num = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
             switch (s.charAt(i)) {
                 case '(':
                     if (chemicalPartStart != -1) throw new InvalidChemicalStringException(String.format("Unexpected '(' in string at position %d", i));
                     chemicalPartStart = i + 1;
                     if (tmp != null) {
-                        if (!Objects.equals(num, "")) out.add(tmp, Integer.parseInt(num));
+                        if (!Objects.equals(num.toString(), "")) out.add(tmp, Integer.parseInt(num.toString()));
                         else out.add(tmp);
                         tmp = null;
                     }
-                    num = "";
+                    num = new StringBuilder();
                     break;
                 case ')':
                     if (chemicalPartStart == -1) throw new InvalidChemicalStringException(String.format("Unexpected ')' in string at position %d", i));
@@ -58,13 +61,13 @@ public class Chemical {
                     break;
                 default:
                     if (Character.isDigit(s.charAt(i)) && chemicalPartStart == -1) {
-                        num += s.charAt(i);
+                        num.append(s.charAt(i));
                     }
             }
         }
         if (chemicalPartStart != -1) throw new InvalidChemicalStringException(String.format("Unexpected '(' in string at position %d", s.length() - 1));
         if (tmp != null) {
-            if (!Objects.equals(num, "")) out.add(tmp, Integer.parseInt(num));
+            if (!Objects.equals(num.toString(), "")) out.add(tmp, Integer.parseInt(num.toString()));
             else out.add(tmp);
         }
         return out;
