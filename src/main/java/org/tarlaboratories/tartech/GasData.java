@@ -145,6 +145,7 @@ public class GasData {
 
     public static @NotNull GasVolume getGasVolumeAt(@NotNull BlockPos pos, @NotNull ServerWorld world) {
         GasData tmp = getEntityForChunk(world.getChunk(pos), world);
+        tmp.updateVolumesInChunk();
         return tmp.getGasVolumeAt(pos);
     }
 
