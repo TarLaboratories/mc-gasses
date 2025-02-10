@@ -110,6 +110,14 @@ public class ModCommands {
         return 0;
     };
 
+    public static final Command<ServerCommandSource> GET_VOLUME_ID_COMMAND = (context) -> {
+        final ServerCommandSource source = context.getSource();
+        final StateSaverAndLoader state = StateSaverAndLoader.getWorldState(source.getWorld());
+        final BlockPos pos = source.getEntityOrThrow().getBlockPos();
+        source.sendFeedback(() -> Text.of(String.format("Volume id at %s: %d", pos.toString(), GasData.getGasVolumeIdAt(pos, source.getWorld()))), false);
+        return 0;
+    };
+
     public static void initialize() {
         ArgumentTypeRegistry.registerArgumentType(
                 Identifier.of(Tartech.MOD_ID, "chemical_argument_type"),
@@ -135,7 +143,9 @@ public class ModCommands {
                                     .then(CommandManager.argument("gas", ChemicalArgumentType.chemical())
                                             .executes(GET_GAS_AMOUNT_COMMAND)
                                             .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
-                                                    .executes(GET_GAS_AMOUNT_AT_POS_COMMAND)))))
+                                                    .executes(GET_GAS_AMOUNT_AT_POS_COMMAND))))
+                            .then(CommandManager.literal("volume_id")
+                                    .executes(GET_VOLUME_ID_COMMAND)))
                     .then(CommandManager.literal("update")
                             .requires(IS_OPERATOR)
                             .executes(UPDATE_GAS_COMMAND)

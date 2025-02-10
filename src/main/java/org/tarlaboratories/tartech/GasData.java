@@ -66,8 +66,15 @@ public class GasData {
     }
 
     public void deleteNotNeededData() {
-        for (Integer i : this.gas_data.keySet()) {
-            if (i <= this.old_max_volume_id) this.gas_data.remove(i);
+        try {
+            for (Integer i : this.gas_data.keySet()) {
+                if (i <= this.old_max_volume_id) {
+                    LOGGER.info("Removing volume with id {} from chunk {} as it is not needed anymore", i, this.chunkPos);
+                    this.gas_data.remove(i);
+                }
+            }
+        } catch (ConcurrentModificationException e) {
+            LOGGER.warn("Could not trim gas data");
         }
     }
 
@@ -149,6 +156,10 @@ public class GasData {
         return tmp.getGasVolumeAt(pos);
     }
 
+    public static int getGasVolumeIdAt(BlockPos pos, ServerWorld world) {
+        return getEntityForChunk(world.getChunk(pos), world).getVolumeIdAt(pos);
+    }
+
     protected void setVolumeIdAt(@NotNull BlockPos pos, int id) {
         if (!this.initialized_data) initializeData();
         this.data.get(pos.getX() - this.getChunkPos().getStartX()).get(pos.getY() - this.chunk.getBottomY()).set(pos.getZ() - this.getChunkPos().getStartZ(), id);
@@ -214,7 +225,7 @@ public class GasData {
     }
 
     protected void updateVolumesInChunk() {
-        this.old_max_volume_id = this.max_volume_id;
+        Integer old_max_volume_id = this.max_volume_id;
         Set<BlockPos> tmp = new HashSet<>();
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
@@ -225,6 +236,7 @@ public class GasData {
                 }
             }
         }
+        this.old_max_volume_id = old_max_volume_id;
     }
 
     public GasVolume getDefaultGasVolume() {
