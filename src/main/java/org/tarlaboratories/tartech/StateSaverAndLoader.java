@@ -35,10 +35,6 @@ public class StateSaverAndLoader extends PersistentState {
 
     private static final Function<ChunkPos, String> chunkPosToString = (p) -> String.format("%d:%d", p.x, p.z);
 
-    private Map<ChunkPos, GasData> getData() {
-        return this.data;
-    }
-
     private StateSaverAndLoader() {
         this.data = new HashMap<>();
     }

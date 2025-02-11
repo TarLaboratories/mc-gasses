@@ -112,7 +112,6 @@ public class ModCommands {
 
     public static final Command<ServerCommandSource> GET_VOLUME_ID_COMMAND = (context) -> {
         final ServerCommandSource source = context.getSource();
-        final StateSaverAndLoader state = StateSaverAndLoader.getWorldState(source.getWorld());
         final BlockPos pos = source.getEntityOrThrow().getBlockPos();
         source.sendFeedback(() -> Text.of(String.format("Volume id at %s: %d", pos.toString(), GasData.getGasVolumeIdAt(pos, source.getWorld()))), false);
         return 0;

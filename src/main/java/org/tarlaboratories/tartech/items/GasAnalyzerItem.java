@@ -20,11 +20,11 @@ public class GasAnalyzerItem extends Item {
     @Override
     public ActionResult use(@NotNull World _world, PlayerEntity player, Hand hand) {
         if (_world instanceof ServerWorld world) {
-            if (GasData.currentlyInitializing.contains(player.getChunkPos())) {
+            if (GasData.isCurrentlyInitializing(player.getChunkPos())) {
                 player.sendMessage(Text.of("Please wait..."), true);
                 return ActionResult.FAIL;
             }
-            GasVolume data = GasData.getGasVolumeAt(player.getBlockPos(), world);
+            GasVolume data = GasData.get(player.getBlockPos(), world);
             player.sendMessage(Text.of("Gas info:"), false);
             player.sendMessage(Text.of(String.format("Temperature: %f", data.getTemperature())), false);
             player.sendMessage(Text.of(String.format("Pressure: %f", data.getPressure())), false);

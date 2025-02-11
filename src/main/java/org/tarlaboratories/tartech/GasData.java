@@ -25,7 +25,7 @@ import java.util.*;
 import java.util.function.Predicate;
 
 public class GasData {
-    public static HashSet<ChunkPos> currentlyInitializing = new HashSet<>();
+    protected static HashSet<ChunkPos> currentlyInitializing = new HashSet<>();
     protected List<List<List<Integer>>> data;
     protected Map<Integer, GasVolume> gas_data;
     protected Integer max_volume_id = 0, old_max_volume_id = -2;
@@ -50,7 +50,7 @@ public class GasData {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    public GasData(@NotNull WorldView world, @NotNull Chunk chunk) {
+    protected GasData(@NotNull WorldView world, @NotNull Chunk chunk) {
         this.chunk = chunk;
         this.chunkPos = chunk.getPos();
         this.dimension = world.getRegistryManager().getOrThrow(RegistryKeys.DIMENSION_TYPE).getKey(world.getDimension()).orElseThrow();
@@ -82,24 +82,32 @@ public class GasData {
         return this.old_max_volume_id;
     }
 
-    public ChunkPos getChunkPos() {
+    protected ChunkPos getChunkPos() {
         return this.chunkPos;
     }
 
-    public List<List<List<Integer>>> getData() {
+    protected List<List<List<Integer>>> getData() {
         return this.data;
     }
 
-    public Map<Integer, GasVolume> getGasData() {
+    protected Map<Integer, GasVolume> getGasData() {
         return this.gas_data;
     }
 
-    public Integer getMaxVolumeId() {
+    protected Integer getMaxVolumeId() {
         return this.max_volume_id;
     }
 
-    public boolean isInitializedData() {
+    protected boolean isInitializedData() {
         return initialized_data;
+    }
+
+    /**
+     * @return if {@code initializeVolumesInChunk} has started but not yet completed for the chunk at {@code pos}
+     * @see GasData#initializeVolumesInChunk
+     */
+    public static boolean isCurrentlyInitializing(ChunkPos pos) {
+        return currentlyInitializing.contains(pos);
     }
 
     protected void initializeData() {
@@ -150,12 +158,23 @@ public class GasData {
         return this.gas_data.getOrDefault(tmp, new GasVolume());
     }
 
-    public static @NotNull GasVolume getGasVolumeAt(@NotNull BlockPos pos, @NotNull ServerWorld world) {
+    /**
+     * @return an instance of {@code GasVolume} (changing it will change the state of gas) representing the state of gas at {@code pos} in {@code world},
+     * if this volume is exposed to sky returns the default for this dimension type
+     * @implNote triggers a gas update for this chunk (may lag)
+     * @see GasVolume
+    */
+    public static @NotNull GasVolume get(@NotNull BlockPos pos, @NotNull ServerWorld world) {
         GasData tmp = getEntityForChunk(world.getChunk(pos), world);
         tmp.updateVolumesInChunk();
         return tmp.getGasVolumeAt(pos);
     }
 
+    /**
+     * Should only be used for debugging purposes
+     * @return the volume id at {@code pos} in {@code world}
+     * @implNote does not trigger a gas update for this chunk
+     */
     public static int getGasVolumeIdAt(BlockPos pos, ServerWorld world) {
         return getEntityForChunk(world.getChunk(pos), world).getVolumeIdAt(pos);
     }
@@ -239,7 +258,7 @@ public class GasData {
         this.old_max_volume_id = old_max_volume_id;
     }
 
-    public GasVolume getDefaultGasVolume() {
+    protected GasVolume getDefaultGasVolume() {
         if (DEFAULT_GAS_VOLUMES.containsKey(this.dimension)) {
             return DEFAULT_GAS_VOLUMES.get(this.dimension).copy();
         } else {
@@ -272,6 +291,12 @@ public class GasData {
         return StateSaverAndLoader.getWorldState(world).getDataForChunk(chunk.getPos());
     }
 
+    /**
+     * @return a new instance of {@code GasData} that contains the gas data for {@code chunk} in {@code world}
+     * @implNote Does not change the state for this world in any way, except adding and removing this chunk from
+     * {@code currentlyInitializing}, which is only used for warnings.
+     * @see StateSaverAndLoader#reinitializeDataAtPos
+     */
     public static @NotNull GasData initializeVolumesInChunk(@NotNull Chunk chunk, WorldView world) {
         if (GasData.currentlyInitializing.contains(chunk.getPos())) {
             LOGGER.warn("Attempt to initialize volumes in chunk {} in world {} while they are already being initialized", chunk.getPos(), world);
@@ -279,6 +304,7 @@ public class GasData {
         GasData.currentlyInitializing.add(chunk.getPos());
         GasData data = new GasData(world, chunk);
         data.initializeVolumesInChunk();
+        data.updateVolumesInChunk();
         LOGGER.info("initializing gas data for chunk {}", chunk.getPos());
         GasData.currentlyInitializing.remove(chunk.getPos());
         return data;
