@@ -16,12 +16,15 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.tarlaboratories.tartech.chemistry.Chemical;
+import org.tarlaboratories.tartech.gas.GasData;
+import org.tarlaboratories.tartech.gas.GasVolume;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
 public class StateSaverAndLoader extends PersistentState {
+    @SuppressWarnings("unused")
     private static final Logger LOGGER = LogManager.getLogger();
     @SuppressWarnings("FieldMayBeFinal")
     private Map<ChunkPos, GasData> data;

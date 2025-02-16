@@ -8,25 +8,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ChemicalPart {
-    public static final ChemicalPart HYDROGEN = primitiveOf("H");
-    public static final ChemicalPart OXYGEN = primitiveOf("O");
-    public static final ChemicalPart WATER = primitiveOf("H").addElement(ChemicalElement.OXYGEN, 1);
-    public static final ChemicalPart SULFUR_DIOXIDE = primitiveOf("O").addElement(ChemicalElement.OXYGEN, 1);
 
     public static final Codec<ChemicalPart> CODEC = Codec.STRING.xmap(ChemicalPart::fromString, ChemicalPart::toString);
-
-    public static ChemicalPart primitiveOf(String element) {
-        return (new ChemicalPart()).addElement(new ChemicalElement(element), 2);
-    }
 
     public Map<ChemicalElement, Integer> contents;
 
     public ChemicalPart() {
         this.contents = new HashMap<>();
-    }
-
-    public ChemicalPart(Map<ChemicalElement, Integer> contents) {
-        this.contents = new HashMap<>(contents);
     }
 
     public static @NotNull ChemicalPart fromString(@NotNull String s) throws InvalidChemicalStringException {
@@ -65,13 +53,8 @@ public class ChemicalPart {
         return out;
     }
 
-    public ChemicalPart addElement(ChemicalElement element, int amount) {
+    public void addElement(ChemicalElement element, int amount) {
         this.contents.put(element, this.contents.getOrDefault(element, 0) + amount);
-        return this;
-    }
-
-    public Map<ChemicalElement, Integer> getContents() {
-        return Map.copyOf(contents);
     }
 
     @Override

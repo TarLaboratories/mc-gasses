@@ -1,4 +1,4 @@
-package org.tarlaboratories.tartech;
+package org.tarlaboratories.tartech.gas;
 
 import com.google.common.base.Objects;
 import com.mojang.serialization.Codec;
@@ -18,8 +18,8 @@ import net.minecraft.world.dimension.DimensionTypes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.tarlaboratories.tartech.StateSaverAndLoader;
 import org.tarlaboratories.tartech.chemistry.Chemical;
-import org.tarlaboratories.tartech.chemistry.ChemicalElement;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -39,11 +39,11 @@ public class GasData {
             Codec.BOOL.fieldOf("initialized_data").forGetter(GasData::isInitializedData),
             ChunkPos.CODEC.fieldOf("chunk_pos").forGetter(GasData::getChunkPos)
     ).apply(instance, GasData::new));
-    protected Chunk chunk;
+    public Chunk chunk;
     protected ChunkPos chunkPos;
     protected RegistryKey<DimensionType> dimension;
     protected final HashMap<RegistryKey<DimensionType>, GasVolume> DEFAULT_GAS_VOLUMES = new HashMap<>(Map.of(
-            DimensionTypes.OVERWORLD, (new GasVolume()).addGas(Chemical.OXYGEN, 0.2).addGas(Chemical.primitiveOf(ChemicalElement.NITROGEN.getElement()), 0.8).setTemperature(20),
+            DimensionTypes.OVERWORLD, (new GasVolume()).addGas(Chemical.OXYGEN, 0.2).addGas(Chemical.fromString("N2"), 0.8).setTemperature(20),
             DimensionTypes.THE_NETHER, (new GasVolume()).addGas(Chemical.SULFUR_DIOXIDE, 0.5).setTemperature(80),
             DimensionTypes.THE_END, (new GasVolume()).setTemperature(-50)
     ));
@@ -148,7 +148,11 @@ public class GasData {
         return this.data.get(pos.getX() - this.getChunkPos().getStartX()).get(pos.getY() - this.chunk.getBottomY()).get(pos.getZ() - this.getChunkPos().getStartZ());
     }
 
-    protected @NotNull GasVolume getGasVolumeAt(@NotNull BlockPos pos) {
+    /**
+     * @return an instance of {@code GasVolume} (changing it will change the state of gas) representing the state of gas at {@code pos}, if this volume is exposed to sky returns the default for this dimension type
+     * @implNote does NOT trigger a gas update
+     */
+    public @NotNull GasVolume getGasVolumeAt(@NotNull BlockPos pos) {
         int tmp = this.getVolumeIdAt(pos);
         if (tmp == -1 && this.canContainGas(pos)) {
             LOGGER.warn("volume id is -1, but block can contain gas at pos = {}", pos);
@@ -243,7 +247,11 @@ public class GasData {
         return connected_blocks;
     }
 
-    protected void updateVolumesInChunk() {
+    /**
+     * Updates all volumes in the chunk that this instance of {@code GasData} represents.
+     * @implNote has worst case {@code O(n)} complexity, where {@code n} is the number of blocks in this chunk.
+     */
+    public void updateVolumesInChunk() {
         Integer old_max_volume_id = this.max_volume_id;
         Set<BlockPos> tmp = new HashSet<>();
         for (int x = 0; x < 16; x++) {

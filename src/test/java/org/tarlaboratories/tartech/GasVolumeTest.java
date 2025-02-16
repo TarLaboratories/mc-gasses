@@ -2,6 +2,7 @@ package org.tarlaboratories.tartech;
 
 import org.junit.jupiter.api.Test;
 import org.tarlaboratories.tartech.chemistry.Chemical;
+import org.tarlaboratories.tartech.gas.GasVolume;
 
 public class GasVolumeTest {
     @Test

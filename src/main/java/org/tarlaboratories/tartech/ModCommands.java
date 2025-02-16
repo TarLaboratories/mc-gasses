@@ -14,6 +14,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 import org.tarlaboratories.tartech.chemistry.ChemicalArgumentType;
+import org.tarlaboratories.tartech.gas.GasData;
 
 import java.util.function.Predicate;
 

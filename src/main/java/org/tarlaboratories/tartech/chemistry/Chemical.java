@@ -1,23 +1,74 @@
 package org.tarlaboratories.tartech.chemistry;
 
 import com.mojang.serialization.Codec;
-import org.jetbrains.annotations.Contract;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 public class Chemical {
-    public static final Chemical HYDROGEN = primitiveOf("H");
-    public static final Chemical OXYGEN = primitiveOf("O");
-    public static final Chemical WATER = new Chemical(ChemicalPart.WATER);
-    public static final Chemical SULFUR_DIOXIDE = new Chemical(ChemicalPart.SULFUR_DIOXIDE);
+    public static Logger LOGGER = LogManager.getLogger();
+
+    @SuppressWarnings("unused")
+    public enum Type {
+        ACID,
+        AMPHOTERIC,
+        BINARY,
+        HYDROXIDE,
+        METAL,
+        NOBLE_GAS,
+        NON_METAL,
+        OXIDE,
+        SALT
+    }
+
+    /**
+     * Represents the properties of a chemical
+     * @param type the chemical's type (acid, salt, oxide, etc.)
+     * @param crystallizationTemperature the temperature below which the chemical turns solid (if applicable)
+     * @param boilingTemperature the temperature above which the chemical turns into gas (if applicable)
+     * @param canBeGas if the chemical can turn into gas at all
+     * @param canBeSolid if the chemical can turn solid at all
+     * @param c the chemical's heat capacity (heat = c*m*dt)
+     * @param r the chemical's electric resistance in mcOm*mm2/m (R = r*l/S)
+     */
+    public record Properties(Type type, double crystallizationTemperature, double boilingTemperature,
+                             boolean canBeGas, boolean canBeSolid, double c, double r, int color) {
+    }
+    public static final Map<Chemical, Chemical.Properties> CHEMICAL_PROPERTIES = Map.of(
+            Chemical.fromString("N2"), new Properties(Type.NON_METAL, 0, -196, true, false, 275, 0, 0xFFFFFF),
+            Chemical.fromString("O2"), new Properties(Type.NON_METAL, 0, -182.98, true, false, 0.92, 0, 0x0000FF),
+            Chemical.fromString("He"), new Properties(Type.NOBLE_GAS, 0, -268.93, true, false, 5.193, 0, 0xFFFFFF),
+            Chemical.fromString("Fe"), new Properties(Type.METAL, 1538, 0, false, true, 0.64, 0.098, 0xFF8800),
+            Chemical.fromString("(H2)(SO4)"), new Properties(Type.ACID, 0, 0, false, false, 0, 0, 0xFFFF00)
+    );
+    public static final Chemical HYDROGEN = Chemical.fromString("H2");
+    public static final Chemical OXYGEN = Chemical.fromString("O2");
+    public static final Chemical WATER = Chemical.fromString("H2O");
+    public static final Chemical SULFUR_DIOXIDE = Chemical.fromString("SO2");
 
     public static final Codec<Chemical> CODEC = Codec.STRING.xmap(Chemical::fromString, Chemical::toString);
 
-    @Contract("_ -> new")
-    public static @NotNull Chemical primitiveOf(String element) {
-        return new Chemical(ChemicalPart.primitiveOf(element));
+    public static <T> @NotNull Map<Chemical, T> forEachChemical(BiFunction<Chemical, Chemical.Properties, T> function) {
+        Map<Chemical, T> output = new HashMap<>();
+        for (Chemical chemical : CHEMICAL_PROPERTIES.keySet()) {
+            output.put(chemical, function.apply(chemical, CHEMICAL_PROPERTIES.get(chemical)));
+        }
+        return output;
     }
+
+    public static Properties getProperties(Chemical chemical) {
+        if (!CHEMICAL_PROPERTIES.containsKey(chemical)) LOGGER.warn("Attempt to access properties of a chemical that doesn't exist: {}", chemical.toString());
+        return CHEMICAL_PROPERTIES.get(chemical);
+    }
+
+    public Properties getProperties() {
+        return getProperties(this);
+    }
+
     public Map<ChemicalPart, Integer> contents;
 
     public Chemical() {
@@ -27,10 +78,6 @@ public class Chemical {
     public Chemical(ChemicalPart @NotNull ... a) {
         contents = new HashMap<>();
         for (ChemicalPart i : a) contents.put(i, 1);
-    }
-
-    public Chemical(Map<ChemicalPart, Integer> a) {
-        contents = new HashMap<>(a);
     }
 
     public static @NotNull Chemical fromString(@NotNull String s) throws InvalidChemicalStringException {
@@ -73,15 +120,13 @@ public class Chemical {
         return out;
     }
 
-    public Map<ChemicalPart, Integer> getContents() {
-        return Map.copyOf(contents);
-    }
-
+    @SuppressWarnings("UnusedReturnValue")
     public Chemical add(ChemicalPart part) {
         this.contents.put(part, 1);
         return this;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public Chemical add(ChemicalPart part, int amount) {
         this.contents.put(part, amount);
         return this;
@@ -95,6 +140,18 @@ public class Chemical {
         StringBuilder s = new StringBuilder();
         for (ChemicalPart c : this.contents.keySet()) {
             s.append("(").append(c.toString()).append(")");
+            if (contents.get(c) > 1) s.append(contents.get(c).toString());
+        }
+        return s.toString();
+    }
+
+    public String toIdentifierString() {
+        if (this.contents.size() == 1) {
+            for (ChemicalPart c : this.contents.keySet()) if (contents.get(c) == 1) return c.toString().toLowerCase();
+        }
+        StringBuilder s = new StringBuilder();
+        for (ChemicalPart c : this.contents.keySet()) {
+            s.append("_").append(c.toString().toLowerCase()).append("_");
             if (contents.get(c) > 1) s.append(contents.get(c).toString());
         }
         return s.toString();

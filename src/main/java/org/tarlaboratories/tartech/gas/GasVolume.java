@@ -1,4 +1,4 @@
-package org.tarlaboratories.tartech;
+package org.tarlaboratories.tartech.gas;
 
 import com.google.common.base.Objects;
 import com.mojang.serialization.Codec;

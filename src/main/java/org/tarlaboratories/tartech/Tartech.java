@@ -9,6 +9,7 @@ public class Tartech implements ModInitializer {
     public void onInitialize() {
         ModItems.initialize();
         ModBlocks.initialize();
+        ModFluids.initialize();
         ModEntities.initialize();
         ModCommands.initialize();
         ModEventListeners.initialize();

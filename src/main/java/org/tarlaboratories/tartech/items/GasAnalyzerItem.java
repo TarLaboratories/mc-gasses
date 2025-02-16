@@ -8,9 +8,9 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
-import org.tarlaboratories.tartech.GasVolume;
+import org.tarlaboratories.tartech.gas.GasVolume;
 import org.tarlaboratories.tartech.chemistry.Chemical;
-import org.tarlaboratories.tartech.GasData;
+import org.tarlaboratories.tartech.gas.GasData;
 
 public class GasAnalyzerItem extends Item {
     public GasAnalyzerItem(Settings settings) {
