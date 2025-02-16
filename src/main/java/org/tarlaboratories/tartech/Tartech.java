@@ -1,6 +1,7 @@
 package org.tarlaboratories.tartech;
 
 import net.fabricmc.api.ModInitializer;
+import org.tarlaboratories.tartech.networking.ModPayloads;
 
 public class Tartech implements ModInitializer {
     public static final String MOD_ID = "tartech";
@@ -13,5 +14,6 @@ public class Tartech implements ModInitializer {
         ModEntities.initialize();
         ModCommands.initialize();
         ModEventListeners.initialize();
+        ModPayloads.initialize();
     }
 }

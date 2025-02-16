@@ -6,7 +6,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
 public class Chemical {
@@ -43,7 +42,8 @@ public class Chemical {
             Chemical.fromString("O2"), new Properties(Type.NON_METAL, 0, -182.98, true, false, 0.92, 0, 0x0000FF),
             Chemical.fromString("He"), new Properties(Type.NOBLE_GAS, 0, -268.93, true, false, 5.193, 0, 0xFFFFFF),
             Chemical.fromString("Fe"), new Properties(Type.METAL, 1538, 0, false, true, 0.64, 0.098, 0xFF8800),
-            Chemical.fromString("(H2)(SO4)"), new Properties(Type.ACID, 0, 0, false, false, 0, 0, 0xFFFF00)
+            Chemical.fromString("(H2)(SO4)"), new Properties(Type.ACID, 0, 0, false, false, 0, 0, 0xFFFF00),
+            Chemical.fromString("SO2"), new Properties(Type.OXIDE, 0, 0, false, false, 0.607, 0, 0xFFBB00)
     );
     public static final Chemical HYDROGEN = Chemical.fromString("H2");
     public static final Chemical OXYGEN = Chemical.fromString("O2");

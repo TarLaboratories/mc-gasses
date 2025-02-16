@@ -5,10 +5,10 @@ import com.mojang.serialization.DataResult;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.test.GameTest;
 import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -32,7 +32,7 @@ public class GameTests implements FabricGameTest {
 
     @GameTest(batchId = "codecTestsBatch")
     public void testGasDataCodec(@NotNull TestContext ctx) {
-        World world = ctx.getWorld();
+        ServerWorld world = ctx.getWorld();
         GasData gasData = GasData.initializeVolumesInChunk(world.getChunk(BlockPos.ofFloored(ctx.getTestBox().getCenter())), world);
         testCodec(ctx, gasData, GasData.CODEC);
         ctx.complete();

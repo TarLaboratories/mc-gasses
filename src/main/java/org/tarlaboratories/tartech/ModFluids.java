@@ -3,6 +3,8 @@ package org.tarlaboratories.tartech;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import org.tarlaboratories.tartech.chemistry.Chemical;
@@ -16,6 +18,7 @@ public class ModFluids {
     }
 
     public static final Map<Chemical, Pair<ChemicalFluid.Still, ChemicalFluid.Flowing>> CHEMICAL_FLUIDS = Chemical.forEachChemical((chemical, properties) -> new Pair<>(register("chemical_fluid_" + chemical.toIdentifierString(), new ChemicalFluid.Still(chemical)), register("flowing_chemical_fluid_" + chemical.toIdentifierString(), new ChemicalFluid.Flowing(chemical))));
+    public static final TagKey<Fluid> CHEMICAL_FLUID_TAG = TagKey.of(RegistryKeys.FLUID, Identifier.of(Tartech.MOD_ID, "chemical_fluids"));
 
     public static void initialize() {}
 }

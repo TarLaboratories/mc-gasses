@@ -9,7 +9,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.PersistentStateManager;
-import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,7 +27,7 @@ public class StateSaverAndLoader extends PersistentState {
     private static final Logger LOGGER = LogManager.getLogger();
     @SuppressWarnings("FieldMayBeFinal")
     private Map<ChunkPos, GasData> data;
-    private World world;
+    private ServerWorld world;
     private @Nullable NbtCompound nbt = null;
     private static final Type<StateSaverAndLoader> type = new Type<>(
             StateSaverAndLoader::new,
@@ -87,7 +86,7 @@ public class StateSaverAndLoader extends PersistentState {
     public void updateVolumesInChunk(@NotNull BlockPos pos) {
         this.addGasDataForChunk(world.getChunk(pos));
         GasData gasData = this.data.get(world.getChunk(pos).getPos());
-        gasData.updateVolumesInChunk();
+        gasData.updateVolumesInChunk(world);
         this.data.put(world.getChunk(pos).getPos(), gasData);
     }
 

@@ -3,12 +3,15 @@ package org.tarlaboratories.tartech.gas;
 import com.google.common.base.Objects;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.util.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents the state of a volume of gas.
@@ -20,13 +23,23 @@ public class GasVolume {
     protected double total_gas;
     protected double radioactivity;
     protected double temperature;
+    protected double total_c;
     protected HashMap<Chemical, Double> contents;
+    protected Set<Chemical> to_be_liquefied;
+
+    protected void checkForLiquids() {
+        for (Chemical gas : contents.keySet()) {
+            if (gas.getProperties().boilingTemperature() > temperature) to_be_liquefied.add(gas);
+        }
+        to_be_liquefied.removeIf((liquid) -> liquid.getProperties().boilingTemperature() >= temperature);
+    }
 
     public static final Codec<GasVolume> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.fieldOf("volume").forGetter(GasVolume::getVolume),
             Codec.DOUBLE.fieldOf("total_gas").forGetter(GasVolume::getTotalGas),
             Codec.DOUBLE.fieldOf("radioactivity").forGetter(GasVolume::getRadioactivity),
             Codec.DOUBLE.fieldOf("temperature").forGetter(GasVolume::getTemperature),
+            Codec.DOUBLE.fieldOf("total_c").forGetter(GasVolume::getTotalC),
             Codec.unboundedMap(Chemical.CODEC, Codec.DOUBLE).fieldOf("contents").forGetter(GasVolume::getContents)
     ).apply(instance, GasVolume::new));
 
@@ -37,17 +50,21 @@ public class GasVolume {
         volume = 0;
         total_gas = 0;
         radioactivity = 0;
+        total_c = 0;
         contents = new HashMap<>();
+        to_be_liquefied = new HashSet<>();
     }
 
     /**
      * Creates a {@code GasVolume} that has all of its parameters set to the arguments of this constructor
      */
-    public GasVolume(int volume, double total_gas, double radioactivity, double temperature, Map<Chemical, Double> contents) {
+    public GasVolume(int volume, double total_gas, double radioactivity, double temperature, double total_c, Map<Chemical, Double> contents) {
         this.volume = volume;
         this.total_gas = total_gas;
         this.radioactivity = radioactivity;
         this.temperature = temperature;
+        this.total_c = total_c;
+        this.to_be_liquefied = new HashSet<>();
         this.contents = new HashMap<>(contents);
     }
 
@@ -58,12 +75,14 @@ public class GasVolume {
      * @return this {@code GasVolume}
      * @see GasVolume#removeGas
      */
-    public GasVolume addGas(Chemical gas, double amount) {
+    public GasVolume addGas(@NotNull Chemical gas, double amount) {
         total_gas += amount;
+        total_c += gas.getProperties().c()*amount;
         if (contents.containsKey(gas))
             contents.put(gas, contents.get(gas) + amount);
         else
             contents.put(gas, amount);
+        checkForLiquids();
         return this;
     }
 
@@ -74,15 +93,20 @@ public class GasVolume {
      * @param amount the amount of this gas to remove (should be positive)
      * @see GasVolume#addGas
      */
-    public void removeGas(Chemical gas, double amount) {
+    public double removeGas(Chemical gas, double amount) {
         if (contents.containsKey(gas) && contents.get(gas) >= amount) {
             contents.put(gas, contents.get(gas) - amount);
             total_gas -= amount;
+            total_c -= gas.getProperties().c()*amount;
+            return amount;
         } else if (contents.containsKey(gas)) {
             double tmp = contents.get(gas);
             contents.remove(gas);
             total_gas -= tmp;
+            total_c -= gas.getProperties().c()*tmp;
+            return tmp;
         }
+        return 0;
     }
 
     /**
@@ -93,6 +117,7 @@ public class GasVolume {
     public GasVolume multiplyContentsBy(double k) {
         this.contents.replaceAll((g, v) -> v * k);
         this.total_gas *= k;
+        this.total_c *= k;
         return this;
     }
 
@@ -107,9 +132,29 @@ public class GasVolume {
         return temperature;
     }
 
+    public double getTotalC() {
+        return total_c;
+    }
+
     public GasVolume setTemperature(double temperature) {
         this.temperature = temperature;
+        checkForLiquids();
         return this;
+    }
+
+    public GasVolume addHeat(double amount) {
+        this.temperature += amount/total_c;
+        checkForLiquids();
+        return this;
+    }
+
+    public Pair<Chemical, Double> getLiquidToBeLiquefied() {
+        for (Chemical liquid : this.to_be_liquefied) {
+            double amount = this.removeGas(liquid, 1);
+            if (!this.contents.containsKey(liquid)) this.to_be_liquefied.remove(liquid);
+            return new Pair<>(liquid, amount);
+        }
+        return new Pair<>(null, 0d);
     }
 
     public double getRadioactivity() {
@@ -159,15 +204,18 @@ public class GasVolume {
     public void mergeWith(@NotNull GasVolume other) {
         this.volume += other.getVolume();
         this.radioactivity = (this.radioactivity + other.radioactivity)/2;
-        this.temperature = (this.temperature + other.temperature)/2;
+        if (this.total_c + other.total_c != 0)
+            this.temperature = (this.temperature*this.total_c + other.temperature*other.total_c)/(this.total_c + other.total_c);
+        this.total_c += other.total_c;
         for (Chemical gas : other.getContents().keySet()) {
             this.addGas(gas, other.getContents().get(gas));
         }
+        checkForLiquids();
     }
 
     @Contract("_ -> new")
     public static @NotNull GasVolume copyOf(@NotNull GasVolume gasVolume) {
-        return new GasVolume(gasVolume.getVolume(), gasVolume.getTotalGas(), gasVolume.getRadioactivity(), gasVolume.getTemperature(), new HashMap<>(gasVolume.getContents()));
+        return new GasVolume(gasVolume.getVolume(), gasVolume.getTotalGas(), gasVolume.getRadioactivity(), gasVolume.getTemperature(), gasVolume.getTotalC(), new HashMap<>(gasVolume.getContents()));
     }
 
     public GasVolume copy() {

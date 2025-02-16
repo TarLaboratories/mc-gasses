@@ -3,10 +3,17 @@ package org.tarlaboratories.tartech.gas;
 import com.google.common.base.Objects;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.fluid.FluidState;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.state.property.Properties;
+import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
@@ -18,8 +25,12 @@ import net.minecraft.world.dimension.DimensionTypes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.tarlaboratories.tartech.ModBlocks;
+import org.tarlaboratories.tartech.ModFluids;
 import org.tarlaboratories.tartech.StateSaverAndLoader;
 import org.tarlaboratories.tartech.chemistry.Chemical;
+import org.tarlaboratories.tartech.fluids.ChemicalFluid;
+import org.tarlaboratories.tartech.networking.LiquidEvaporationPayload;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -57,8 +68,8 @@ public class GasData {
     }
 
     protected GasData(List<List<List<Integer>>> data, Map<Integer, GasVolume> gas_data, int max_volume_id, int old_max_volume_id, boolean initialized_data, ChunkPos pos) {
-        this.data = data;
-        this.gas_data = gas_data;
+        this.data = new ArrayList<>(data);
+        this.gas_data = new HashMap<>(gas_data);
         this.max_volume_id = max_volume_id;
         this.old_max_volume_id = old_max_volume_id;
         this.initialized_data = initialized_data;
@@ -170,7 +181,7 @@ public class GasData {
     */
     public static @NotNull GasVolume get(@NotNull BlockPos pos, @NotNull ServerWorld world) {
         GasData tmp = getEntityForChunk(world.getChunk(pos), world);
-        tmp.updateVolumesInChunk();
+        tmp.updateVolumesInChunk(world);
         return tmp.getGasVolumeAt(pos);
     }
 
@@ -185,7 +196,18 @@ public class GasData {
 
     protected void setVolumeIdAt(@NotNull BlockPos pos, int id) {
         if (!this.initialized_data) initializeData();
-        this.data.get(pos.getX() - this.getChunkPos().getStartX()).get(pos.getY() - this.chunk.getBottomY()).set(pos.getZ() - this.getChunkPos().getStartZ(), id);
+        int i = pos.getX() - this.getChunkPos().getStartX(), j = pos.getY() - this.chunk.getBottomY(), k = pos.getZ() - this.getChunkPos().getStartZ();
+        try {
+            this.data.get(i).get(j).set(k, id);
+        } catch (UnsupportedOperationException exception) {
+            try {
+                this.data.get(i).set(j, new ArrayList<>(this.data.get(i).get(j)));
+            } catch (UnsupportedOperationException exception2) {
+                this.data.set(i, new ArrayList<>(this.data.get(i)));
+                this.data.get(i).set(j, new ArrayList<>(this.data.get(i).get(j)));
+            }
+            this.data.get(i).get(j).set(k, id);
+        }
     }
 
     protected Set<BlockPos> setVolumeAtPos(@NotNull BlockPos pos, int id) {
@@ -196,7 +218,7 @@ public class GasData {
 
     protected boolean canContainGas(@NotNull BlockPos pos) {
         assert !this.chunk.isOutOfHeightLimit(pos);
-        return !this.getNeighboursWithSameGas(pos).isEmpty() || this.chunk.getBlockState(pos).isAir();
+        return !this.getNeighboursWithSameGas(pos).isEmpty() || this.chunk.getBlockState(pos).isAir() || this.chunk.getFluidState(pos).isIn(ModFluids.CHEMICAL_FLUID_TAG);
     }
 
     protected Set<BlockPos> getConnectedBlocks(@NotNull BlockPos pos, @NotNull Predicate<BlockPos> predicate) {
@@ -226,6 +248,14 @@ public class GasData {
         return this.chunk.getHeightmap(Heightmap.Type.MOTION_BLOCKING).get(x, z);
     }
 
+    protected int getHighestY() {
+        int out = chunk.getBottomY();
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) out = Math.max(out, this.getHighestY(x, z));
+        }
+        return out;
+    }
+
     protected boolean canSeeSky(@NotNull BlockPos pos) {
         return this.getHighestY(pos.getX() - this.chunkPos.getStartX(), pos.getZ() - this.chunkPos.getStartZ()) <= pos.getY();
     }
@@ -247,11 +277,38 @@ public class GasData {
         return connected_blocks;
     }
 
+    public void doLiquidCheck(ServerWorld world) {
+        for (int y = this.chunk.getBottomY(); y <= this.getHighestY(); y++) {
+            for (int x = 0; x < 16; x++) {
+                for (int z = 0; z < 16; z++) {
+                    BlockPos tmp_pos = this.chunkPos.getBlockPos(x, y, z);
+                    if (chunk.getBlockState(tmp_pos).isAir()) {
+                        this.getGasVolumeAt(tmp_pos).checkForLiquids();
+                        Pair<Chemical, Double> liquid = this.getGasVolumeAt(tmp_pos).getLiquidToBeLiquefied();
+                        if (liquid.getRight() >= 1) {
+                            this.chunk.setBlockState(tmp_pos, ModBlocks.CHEMICAL_FLUID_BLOCKS.get(liquid.getLeft()).getDefaultState().with(Properties.LEVEL_15, 15), false);
+                        }
+                    } else if (chunk.getFluidState(tmp_pos).isIn(ModFluids.CHEMICAL_FLUID_TAG)) {
+                        FluidState fluidState = chunk.getFluidState(tmp_pos);
+                        Chemical chemical = ((ChemicalFluid)(fluidState.getFluid())).getChemical();
+                        if (chemical.getProperties().boilingTemperature() <= this.getGasVolumeAt(tmp_pos).getTemperature()) {
+                            if (fluidState.isStill()) this.getGasVolumeAt(tmp_pos).addGas(chemical, 1);
+                            chunk.setBlockState(tmp_pos, Blocks.AIR.getDefaultState(), false);
+                            for (ServerPlayerEntity player : PlayerLookup.tracking(world, tmp_pos)) {
+                                ServerPlayNetworking.send(player, new LiquidEvaporationPayload(tmp_pos));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Updates all volumes in the chunk that this instance of {@code GasData} represents.
-     * @implNote has worst case {@code O(n)} complexity, where {@code n} is the number of blocks in this chunk.
+     * @implNote Has worst case {@code O(n)} complexity, where {@code n} is the number of blocks in this chunk. The worst case is when there are non-solid blocks at height limit.
      */
-    public void updateVolumesInChunk() {
+    public void updateVolumesInChunk(ServerWorld world) {
         Integer old_max_volume_id = this.max_volume_id;
         Set<BlockPos> tmp = new HashSet<>();
         for (int x = 0; x < 16; x++) {
@@ -264,6 +321,7 @@ public class GasData {
             }
         }
         this.old_max_volume_id = old_max_volume_id;
+        doLiquidCheck(world);
     }
 
     protected GasVolume getDefaultGasVolume() {
@@ -305,14 +363,14 @@ public class GasData {
      * {@code currentlyInitializing}, which is only used for warnings.
      * @see StateSaverAndLoader#reinitializeDataAtPos
      */
-    public static @NotNull GasData initializeVolumesInChunk(@NotNull Chunk chunk, WorldView world) {
+    public static @NotNull GasData initializeVolumesInChunk(@NotNull Chunk chunk, ServerWorld world) {
         if (GasData.currentlyInitializing.contains(chunk.getPos())) {
             LOGGER.warn("Attempt to initialize volumes in chunk {} in world {} while they are already being initialized", chunk.getPos(), world);
         }
         GasData.currentlyInitializing.add(chunk.getPos());
         GasData data = new GasData(world, chunk);
         data.initializeVolumesInChunk();
-        data.updateVolumesInChunk();
+        data.updateVolumesInChunk(world);
         LOGGER.info("initializing gas data for chunk {}", chunk.getPos());
         GasData.currentlyInitializing.remove(chunk.getPos());
         return data;

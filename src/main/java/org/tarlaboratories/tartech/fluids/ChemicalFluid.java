@@ -35,6 +35,10 @@ public abstract class ChemicalFluid extends AbstractFluid {
 
     protected final Chemical chemical;
 
+    public Chemical getChemical() {
+        return chemical;
+    }
+
     public ChemicalFluid(Chemical chemical) {
         this.chemical = chemical;
     }
