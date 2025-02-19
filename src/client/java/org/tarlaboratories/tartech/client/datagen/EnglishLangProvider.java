@@ -24,5 +24,16 @@ public class EnglishLangProvider extends FabricLanguageProvider {
         translationBuilder.add(ModItems.GAS_ANALYZER_ITEM, "Gas Analyzer");
         translationBuilder.add(ModItems.GAS_TEST_ITEM, "Debug Chunk Updater 3000");
         translationBuilder.add(ModItems.MAIN_ITEM_GROUP_KEY, "TarTech");
+        translationBuilder.add("tartech.gas.info", "Gas info:");
+        translationBuilder.add("tartech.gas.temperature", "Temperature:");
+        translationBuilder.add("tartech.gas.pressure", "Pressure:");
+        translationBuilder.add("tartech.gas.volume", "Volume:");
+        translationBuilder.add("tartech.gas.gas_info", "Gas present in this volume:");
+        translationBuilder.add("tartech.gas.no_gas_info", "There is no gas present in this volume");
+        translationBuilder.add("tartech.gas.c", "C: ");
+        translationBuilder.add("tartech.gas.fluid_info", "Fluids present in this volume:");
+        translationBuilder.add("tartech.gas.no_fluid_info", "There are no fluids present in this volume");
+        translationBuilder.add("tartech.gas.total", "Total gas:");
+        translationBuilder.add("tartech.gas.fluid_total", "Total fluid: ");
     }
 }

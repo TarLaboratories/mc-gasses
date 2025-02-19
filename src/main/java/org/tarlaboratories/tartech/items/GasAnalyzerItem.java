@@ -25,18 +25,7 @@ public class GasAnalyzerItem extends Item {
                 return ActionResult.FAIL;
             }
             GasVolume data = GasData.get(player.getBlockPos(), world);
-            player.sendMessage(Text.of("Gas info:"), false);
-            player.sendMessage(Text.of(String.format("Temperature: %f", data.getTemperature())), false);
-            player.sendMessage(Text.of(String.format("Pressure: %f", data.getPressure())), false);
-            if (data.getVolume() <= 1000)
-                player.sendMessage(Text.of(String.format("Volume: %d B", data.getVolume())), false);
-            else
-                player.sendMessage(Text.of("Volume: >1000 B"), false);
-            player.sendMessage(Text.of("Gasses present in this volume:"), false);
-            for (Chemical gas : data.getContents().keySet()) {
-                if (data.getVolume() > 1000) player.sendMessage(Text.of(String.format("%s: %.2f%%", gas.toString(), data.getGasAmount(gas) * 100 / data.getVolume())), false);
-                else player.sendMessage(Text.of(String.format("%s: %d mB (%.2f%%)", gas.toString(), Math.round(data.getGasAmount(gas) * 1000), data.getGasAmount(gas) * 100 / data.getVolume())), false);
-            }
+            player.sendMessage(data.getInfo(player.isCreative()), false);
             return ActionResult.SUCCESS;
         } else return ActionResult.PASS;
     }

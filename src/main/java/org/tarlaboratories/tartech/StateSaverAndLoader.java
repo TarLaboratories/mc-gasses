@@ -80,7 +80,7 @@ public class StateSaverAndLoader extends PersistentState {
 
     public void addGasAtPos(@NotNull BlockPos pos, Chemical gas, double amount) {
         if (amount > 0) this.getDataForChunk(world.getChunk(pos).getPos()).getGasVolumeAt(pos).addGas(gas, amount);
-        else this.getDataForChunk(world.getChunk(pos).getPos()).getGasVolumeAt(pos).removeGas(gas, amount);
+        else this.getDataForChunk(world.getChunk(pos).getPos()).getGasVolumeAt(pos).removeGas(gas, -amount);
     }
 
     public void updateVolumesInChunk(@NotNull BlockPos pos) {

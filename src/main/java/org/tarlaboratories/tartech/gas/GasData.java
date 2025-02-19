@@ -30,6 +30,7 @@ import org.tarlaboratories.tartech.ModFluids;
 import org.tarlaboratories.tartech.StateSaverAndLoader;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 import org.tarlaboratories.tartech.fluids.ChemicalFluid;
+import org.tarlaboratories.tartech.networking.GasCondensationPayload;
 import org.tarlaboratories.tartech.networking.LiquidEvaporationPayload;
 
 import java.util.*;
@@ -270,6 +271,8 @@ public class GasData {
         gasVolume.setRadioactivity(this.getDefaultGasVolume().getRadioactivity());
         for (BlockPos tmp_pos : connected_blocks) {
             gasVolume.mergeWith(this.getGasVolumeAt(tmp_pos).getPart(1));
+            FluidState fluid = chunk.getFluidState(tmp_pos);
+            if (fluid.isIn(ModFluids.CHEMICAL_FLUID_TAG) && fluid.isStill()) gasVolume.addLiquid(fluid);
             this.setVolumeIdAt(tmp_pos, max_volume_id + 1);
         }
         this.gas_data.put(max_volume_id + 1, gasVolume);
@@ -286,13 +289,16 @@ public class GasData {
                         this.getGasVolumeAt(tmp_pos).checkForLiquids();
                         Pair<Chemical, Double> liquid = this.getGasVolumeAt(tmp_pos).getLiquidToBeLiquefied();
                         if (liquid.getRight() >= 1) {
-                            this.chunk.setBlockState(tmp_pos, ModBlocks.CHEMICAL_FLUID_BLOCKS.get(liquid.getLeft()).getDefaultState().with(Properties.LEVEL_15, 15), false);
+                            this.chunk.setBlockState(tmp_pos, ModFluids.CHEMICAL_FLUIDS.get(liquid.getLeft()).getLeft().getDefaultState().getBlockState(), false);
+                            for (ServerPlayerEntity player : PlayerLookup.tracking(world, tmp_pos)) {
+                                ServerPlayNetworking.send(player, new GasCondensationPayload(tmp_pos, liquid.getLeft().toString()));
+                            }
                         }
                     } else if (chunk.getFluidState(tmp_pos).isIn(ModFluids.CHEMICAL_FLUID_TAG)) {
                         FluidState fluidState = chunk.getFluidState(tmp_pos);
                         Chemical chemical = ((ChemicalFluid)(fluidState.getFluid())).getChemical();
-                        if (chemical.getProperties().boilingTemperature() <= this.getGasVolumeAt(tmp_pos).getTemperature()) {
-                            if (fluidState.isStill()) this.getGasVolumeAt(tmp_pos).addGas(chemical, 1);
+                        if (chemical.getProperties().boilingTemperature() <= this.getGasVolumeAt(tmp_pos).getTemperature() && chemical.getProperties().canBeGas()) {
+                            if (fluidState.isStill()) this.getGasVolumeAt(tmp_pos).evaporateLiquid(chemical, 1);
                             chunk.setBlockState(tmp_pos, Blocks.AIR.getDefaultState(), false);
                             for (ServerPlayerEntity player : PlayerLookup.tracking(world, tmp_pos)) {
                                 ServerPlayNetworking.send(player, new LiquidEvaporationPayload(tmp_pos));
@@ -322,6 +328,21 @@ public class GasData {
         }
         this.old_max_volume_id = old_max_volume_id;
         doLiquidCheck(world);
+    }
+
+    /**
+     * Updates ONLY the volume that is directly connected to {@code pos}
+     */
+    public static void updateVolumeAtPos(ServerWorld world, BlockPos pos) {
+        getEntityForChunk(world.getChunk(pos), world).updateVolumeAtPos(pos);
+    }
+
+    public static void updateVolumesInChunk(ServerWorld world, BlockPos pos) {
+        getEntityForChunk(world.getChunk(pos), world).updateVolumesInChunk(world);
+    }
+
+    public static void doLiquidCheckForChunk(ServerWorld world, BlockPos pos) {
+        getEntityForChunk(world.getChunk(pos), world).doLiquidCheck(world);
     }
 
     protected GasVolume getDefaultGasVolume() {

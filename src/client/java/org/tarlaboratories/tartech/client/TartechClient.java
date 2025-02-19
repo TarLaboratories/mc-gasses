@@ -7,10 +7,15 @@ import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry
 import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.particle.ParticleTypes;
+import net.minecraft.state.property.Properties;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
+import org.tarlaboratories.tartech.ModBlocks;
 import org.tarlaboratories.tartech.ModFluids;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 import org.tarlaboratories.tartech.fluids.ChemicalFluid;
+import org.tarlaboratories.tartech.networking.GasCondensationPayload;
 import org.tarlaboratories.tartech.networking.LiquidEvaporationPayload;
 
 import java.util.Objects;
@@ -41,7 +46,14 @@ public class TartechClient implements ClientModInitializer {
 
     public void registerNetworkingReceivers() {
         ClientPlayNetworking.registerGlobalReceiver(LiquidEvaporationPayload.ID, (payload, context) -> {
-            Objects.requireNonNull(context.client().world).setBlockState(payload.pos(), Blocks.AIR.getDefaultState());
+            BlockPos pos = payload.pos();
+            Objects.requireNonNull(context.client().world).setBlockState(pos, Blocks.AIR.getDefaultState());
+            context.client().particleManager.addParticle(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0, 0.1, 0);
+        });
+        ClientPlayNetworking.registerGlobalReceiver(GasCondensationPayload.ID, (payload, context) -> {
+            BlockPos pos = payload.pos();
+            Chemical gas = Chemical.fromString(payload.gas());
+            Objects.requireNonNull(context.client().world).setBlockState(pos, ModFluids.CHEMICAL_FLUIDS.get(gas).getLeft().getDefaultState().getBlockState());
         });
     }
 
