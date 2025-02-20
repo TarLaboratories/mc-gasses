@@ -45,11 +45,10 @@ public class Chemical {
             Chemical.fromString("(H2)(SO4)"), new Properties(Type.ACID, 0, 0, false, false, 0, 0, 0xFFFF00),
             Chemical.fromString("SO2"), new Properties(Type.OXIDE, 0, 0, false, false, 0.607, 0, 0xFFBB00),
             Chemical.fromString("(TeST)(GaS)"), new Properties(Type.BINARY, -20000, -10000, true, false, 1, 0, 0x00FFFF),
-            Chemical.fromString("H2O"), new Properties(Type.BINARY, 0, 100, true, true, 4.2, 0, 0x0000BB)
+            Chemical.fromString("H2O"), new Properties(Type.BINARY, 0, 100, true, true, 4.2, 0, 0x0000BB),
+            Chemical.fromString("CO2"), new Properties(Type.OXIDE, 0, -10000, true, false, 0.846, 0, 0x888888)
     );
-    public static final Chemical HYDROGEN = Chemical.fromString("H2");
     public static final Chemical OXYGEN = Chemical.fromString("O2");
-    public static final Chemical WATER = Chemical.fromString("H2O");
     public static final Chemical SULFUR_DIOXIDE = Chemical.fromString("SO2");
 
     public static final Codec<Chemical> CODEC = Codec.STRING.xmap(Chemical::fromString, Chemical::toString);

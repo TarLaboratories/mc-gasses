@@ -10,6 +10,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.tarlaboratories.tartech.chemistry.Chemical;
@@ -33,6 +34,7 @@ public class ModItems {
 
     public static final Map<Chemical, RegistryKey<Item>> CHEMICAL_FLUID_BUCKET_KEYS = Chemical.forEachChemical((chemical, properties) -> RegistryKey.of(RegistryKeys.ITEM, Identifier.of(Tartech.MOD_ID, "chemical_fluid_" + chemical.toIdentifierString() + "_bucket")));
     public static final Map<Chemical, Item> CHEMICAL_FLUID_BUCKETS = Chemical.forEachChemical((chemical, properties) -> register(new BucketItem(ModFluids.CHEMICAL_FLUIDS.get(chemical).getLeft(), new Item.Settings().registryKey(CHEMICAL_FLUID_BUCKET_KEYS.get(chemical))), CHEMICAL_FLUID_BUCKET_KEYS.get(chemical)));
+    public static final TagKey<Item> CHEMICAL_FLUID_BUCKET_TAG = TagKey.of(RegistryKeys.ITEM, Identifier.of(Tartech.MOD_ID, "chemical_fluid_buckets"));
 
     public static final RegistryKey<ItemGroup> MAIN_ITEM_GROUP_KEY = RegistryKey.of(RegistryKeys.ITEM_GROUP, Identifier.of(Tartech.MOD_ID, "main_item_group"));
     public static final ItemGroup MAIN_ITEM_GROUP = FabricItemGroup.builder()

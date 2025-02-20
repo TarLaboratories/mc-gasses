@@ -10,9 +10,9 @@ import net.minecraft.block.Blocks;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.state.property.Properties;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -25,7 +25,6 @@ import net.minecraft.world.dimension.DimensionTypes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.tarlaboratories.tartech.ModBlocks;
 import org.tarlaboratories.tartech.ModFluids;
 import org.tarlaboratories.tartech.StateSaverAndLoader;
 import org.tarlaboratories.tartech.chemistry.Chemical;
@@ -77,7 +76,8 @@ public class GasData {
         this.chunkPos = pos;
     }
 
-    public void deleteNotNeededData() {
+    public void deleteNotNeededData(ServerWorld world) {
+        if (chunk.needsSaving()) this.updateVolumesInChunk(world);
         try {
             for (Integer i : this.gas_data.keySet()) {
                 if (i <= this.old_max_volume_id) {
@@ -170,7 +170,7 @@ public class GasData {
             LOGGER.warn("volume id is -1, but block can contain gas at pos = {}", pos);
             return (new GasVolume()).addVolume(1);
         } else if (tmp == -1) return new GasVolume();
-        else if (tmp <= old_max_volume_id) return this.getDefaultGasVolume().multiplyContentsBy(10000).addVolume(10000);
+        else if (tmp <= old_max_volume_id) return this.getDefaultGasVolume().multiplyContentsBy(10000).addVolume(10000).exposed();
         return this.gas_data.getOrDefault(tmp, new GasVolume());
     }
 
@@ -182,7 +182,7 @@ public class GasData {
     */
     public static @NotNull GasVolume get(@NotNull BlockPos pos, @NotNull ServerWorld world) {
         GasData tmp = getEntityForChunk(world.getChunk(pos), world);
-        tmp.updateVolumesInChunk(world);
+        if (world.getChunk(pos).needsSaving()) tmp.updateVolumesInChunk(world);
         return tmp.getGasVolumeAt(pos);
     }
 
@@ -275,7 +275,7 @@ public class GasData {
             if (fluid.isIn(ModFluids.CHEMICAL_FLUID_TAG) && fluid.isStill()) gasVolume.addLiquid(fluid);
             this.setVolumeIdAt(tmp_pos, max_volume_id + 1);
         }
-        this.gas_data.put(max_volume_id + 1, gasVolume);
+        this.gas_data.put(max_volume_id + 1, gasVolume.unexposed());
         max_volume_id++;
         return connected_blocks;
     }
@@ -333,10 +333,12 @@ public class GasData {
     /**
      * Updates ONLY the volume that is directly connected to {@code pos}
      */
+    @SuppressWarnings("unused")
     public static void updateVolumeAtPos(ServerWorld world, BlockPos pos) {
         getEntityForChunk(world.getChunk(pos), world).updateVolumeAtPos(pos);
     }
 
+    @SuppressWarnings("unused")
     public static void updateVolumesInChunk(ServerWorld world, BlockPos pos) {
         getEntityForChunk(world.getChunk(pos), world).updateVolumesInChunk(world);
     }
@@ -395,6 +397,18 @@ public class GasData {
         LOGGER.info("initializing gas data for chunk {}", chunk.getPos());
         GasData.currentlyInitializing.remove(chunk.getPos());
         return data;
+    }
+
+    public static boolean playerBreathe(@NotNull ServerPlayerEntity player) {
+        BlockPos pos = BlockPos.ofFloored(player.getEyePos());
+        if (player.isSubmergedIn(FluidTags.WATER) || player.isSubmergedIn(FluidTags.LAVA) || player.isSubmergedIn(ModFluids.CHEMICAL_FLUID_TAG)) return false;
+        GasVolume gasVolume = get(pos, player.getServerWorld());
+        boolean tmp = gasVolume.breathable();
+        if (tmp) {
+            gasVolume.removeGas(Chemical.OXYGEN, 0.005);
+            gasVolume.addGas(Chemical.fromString("CO2"), 0.005);
+        }
+        return tmp;
     }
 
     @Override

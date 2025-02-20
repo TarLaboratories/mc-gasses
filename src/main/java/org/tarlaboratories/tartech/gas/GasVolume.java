@@ -8,6 +8,9 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Pair;
+import net.minecraft.util.dynamic.Range;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.tarlaboratories.tartech.chemistry.Chemical;
@@ -24,13 +27,21 @@ import java.util.Set;
  * Does NOT contain information about any positions, worlds or blocks.
  */
 public class GasVolume {
+    @SuppressWarnings("unused")
+    private static final Logger LOGGER = LogManager.getLogger();
     protected int volume;
     protected double total_gas, total_liquid;
     protected double radioactivity;
     protected double temperature;
     protected double total_c;
+    protected boolean is_exposed;
     protected HashMap<Chemical, Double> contents, liquid_contents;
     protected Set<Chemical> to_be_liquefied;
+    public static final Map<Chemical, Range<Double>> breathable_req = Map.of(
+            Chemical.OXYGEN, new Range<>(0.1, 0.3),
+            Chemical.fromString("CO2"), new Range<>(0., 0.06)
+    );
+    public static final Range<Double> breathable_pressure_req = new Range<>(0.5, 1.5);
 
     protected void checkForLiquids() {
         for (Chemical gas : contents.keySet()) {
@@ -46,9 +57,14 @@ public class GasVolume {
             Codec.DOUBLE.fieldOf("radioactivity").forGetter(GasVolume::getRadioactivity),
             Codec.DOUBLE.fieldOf("temperature").forGetter(GasVolume::getTemperature),
             Codec.DOUBLE.fieldOf("total_c").forGetter(GasVolume::getTotalC),
+            Codec.BOOL.fieldOf("is_exposed").forGetter(GasVolume::isExposed),
             Codec.unboundedMap(Chemical.CODEC, Codec.DOUBLE).fieldOf("contents").forGetter(GasVolume::getContents),
             Codec.unboundedMap(Chemical.CODEC, Codec.DOUBLE).fieldOf("liquid_contents").forGetter(GasVolume::getLiquidContents)
     ).apply(instance, GasVolume::new));
+
+    public Boolean isExposed() {
+        return this.is_exposed;
+    }
 
     public Double getTotalLiquid() {
         return this.total_liquid;
@@ -67,6 +83,7 @@ public class GasVolume {
         total_liquid = 0;
         radioactivity = 0;
         total_c = 0;
+        is_exposed = false;
         contents = new HashMap<>();
         liquid_contents = new HashMap<>();
         to_be_liquefied = new HashSet<>();
@@ -75,7 +92,7 @@ public class GasVolume {
     /**
      * Creates a {@code GasVolume} that has all of its parameters set to the arguments of this constructor
      */
-    public GasVolume(int volume, double total_gas, double total_liquid, double radioactivity, double temperature, double total_c, Map<Chemical, Double> contents, Map<Chemical, Double> liquid_contents) {
+    public GasVolume(int volume, double total_gas, double total_liquid, double radioactivity, double temperature, double total_c, boolean is_exposed, Map<Chemical, Double> contents, Map<Chemical, Double> liquid_contents) {
         this.volume = volume;
         this.total_gas = total_gas;
         this.total_liquid = total_liquid;
@@ -83,6 +100,7 @@ public class GasVolume {
         this.temperature = temperature;
         this.total_c = total_c;
         this.to_be_liquefied = new HashSet<>();
+        this.is_exposed = is_exposed;
         this.contents = new HashMap<>(contents);
         this.liquid_contents = new HashMap<>(liquid_contents);
     }
@@ -226,6 +244,7 @@ public class GasVolume {
     public void mergeWith(@NotNull GasVolume other) {
         this.volume += other.getVolume();
         this.radioactivity = (this.radioactivity + other.radioactivity)/2;
+        this.is_exposed = this.is_exposed || other.is_exposed;
         if (this.total_c + other.total_c != 0)
             this.temperature = (this.temperature*this.total_c + other.temperature*other.total_c)/(this.total_c + other.total_c);
         else if (this.volume != 0)
@@ -239,7 +258,7 @@ public class GasVolume {
 
     @Contract("_ -> new")
     public static @NotNull GasVolume copyOf(@NotNull GasVolume gasVolume) {
-        return new GasVolume(gasVolume.getVolume(), gasVolume.getTotalGas(), gasVolume.getTotalLiquid(), gasVolume.getRadioactivity(), gasVolume.getTemperature(), gasVolume.getTotalC(), new HashMap<>(gasVolume.getContents()), new HashMap<>(gasVolume.liquid_contents));
+        return new GasVolume(gasVolume.getVolume(), gasVolume.getTotalGas(), gasVolume.getTotalLiquid(), gasVolume.getRadioactivity(), gasVolume.getTemperature(), gasVolume.getTotalC(), gasVolume.isExposed(), new HashMap<>(gasVolume.getContents()), new HashMap<>(gasVolume.liquid_contents));
     }
 
     public GasVolume copy() {
@@ -255,6 +274,7 @@ public class GasVolume {
         out.temperature = temperature;
         out.radioactivity = radioactivity;
         out.volume = size;
+        out.is_exposed = is_exposed;
         for (Chemical gas : this.getContents().keySet()) {
             out.addGas(gas, this.getGasAmount(gas)*size/this.getVolume());
         }
@@ -265,7 +285,7 @@ public class GasVolume {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         GasVolume gasVolume = (GasVolume) o;
-        return volume == gasVolume.volume && Double.compare(total_gas, gasVolume.total_gas) == 0 && Double.compare(radioactivity, gasVolume.radioactivity) == 0 && Double.compare(temperature, gasVolume.temperature) == 0 && Objects.equal(contents, gasVolume.contents) && Objects.equal(liquid_contents, gasVolume.liquid_contents);
+        return volume == gasVolume.volume && Double.compare(total_gas, gasVolume.total_gas) == 0 && Double.compare(radioactivity, gasVolume.radioactivity) == 0 && Double.compare(temperature, gasVolume.temperature) == 0 && Objects.equal(contents, gasVolume.contents) && Objects.equal(liquid_contents, gasVolume.liquid_contents) && Boolean.compare(is_exposed, gasVolume.is_exposed) == 0;
     }
 
     @Override
@@ -289,26 +309,38 @@ public class GasVolume {
         MutableText out = Text.empty();
         out.append(Text.translatable("tartech.gas.info")).append("\n");
         out.append(Text.translatable("tartech.gas.temperature").append(String.format(" %f\n", temperature)));
-        out.append(Text.translatable("tartech.gas.pressure").append(String.format(" %f\n", getPressure())));
+        double delta = Math.min(getPressure() - breathable_pressure_req.minInclusive(), breathable_pressure_req.maxInclusive() - getPressure());
+        if (!breathable_pressure_req.contains(getPressure())) delta = 0;
+        out.append(Text.translatable("tartech.gas.pressure").append(Text.literal(String.format(" %f\n", getPressure())).formatted(double_to_format(2*delta/(breathable_pressure_req.maxInclusive() - breathable_pressure_req.minInclusive())))));
         if (display_volumes) {
             out.append(Text.translatable("tartech.gas.volume").append(String.format(" %d\n", volume)));
             if (contents.isEmpty()) out.append(Text.translatable("tartech.gas.no_gas_info"));
             else {
                 out.append(Text.translatable("tartech.gas.gas_info")).append("\n");
-                for (Chemical gas : contents.keySet()) out.append(String.format("%s: %d mB (%.2f%%)\n", gas.toString(), Math.round(contents.get(gas)*1000), contents.get(gas)*100/volume));
-                out.append(Text.translatable("tartech.gas.total")).append(String.format(" %d mB", Math.round(total_gas*1000)));
+                for (Chemical gas : contents.keySet()) {
+                    MutableText text = Text.literal(String.format("%s: %d mB (%.2f%%)\n", gas.toString(), Math.round(contents.get(gas)*1000), contents.get(gas)*100/volume));
+                    double tmp = breathability(gas);
+                    out.append(text.formatted(double_to_format(tmp)));
+                }
+                out.append(Text.translatable("tartech.gas.total")).append(String.format(" %d mB\n", Math.round(total_gas*1000)));
             }
-            if (extended) out.append("\n");
         } else {
             out.append(Text.translatable("tartech.gas.volume").append(">1000 B\n"));
             if (contents.isEmpty()) out.append(Text.translatable("tartech.gas.no_gas_info")).append("\n");
             else out.append(Text.translatable("tartech.gas.gas_info")).append("\n");
-            for (Chemical gas : contents.keySet()) out.append(String.format("%s: %.2f%%\n", gas.toString(), contents.get(gas)*100/volume));
+            for (Chemical gas : contents.keySet()) {
+                MutableText text = Text.literal(String.format("%s: %.2f%%\n", gas.toString(), contents.get(gas)*100/volume));
+                double tmp = breathability(gas);
+                out.append(text.formatted(double_to_format(tmp)));
+            }
         }
+        out.append(Text.translatable("tartech.gas.exposed")).append(" ").append(is_exposed ? Text.translatable("tartech.yes") : Text.translatable("tartech.no"));
         if (extended) {
+            out.append("\n");
             MutableText extended_info = Text.empty();
             extended_info.append(Text.translatable("tartech.gas.c")).append(String.format(" %f\n", total_c));
-            if (liquid_contents.isEmpty()) extended_info.append(Text.translatable("tartech.gas.no_fluid_info"));
+            if (is_exposed) extended_info.append(Text.translatable("tartech.gas.fluid_info_not_available"));
+            else if (liquid_contents.isEmpty()) extended_info.append(Text.translatable("tartech.gas.no_fluid_info"));
             else {
                 extended_info.append(Text.translatable("tartech.gas.fluid_info")).append("\n");
                 for (Chemical gas : liquid_contents.keySet()) extended_info.append(String.format("%s: %d mB (%.2f%%)\n", gas.toString(), Math.round(liquid_contents.get(gas)*1000), liquid_contents.get(gas)*100/volume));
@@ -323,5 +355,44 @@ public class GasVolume {
         this.total_liquid -= amount;
         this.liquid_contents.put(chemical, this.liquid_contents.getOrDefault(chemical, 0d) - amount);
         this.addGas(chemical, amount);
+    }
+
+    public GasVolume exposed() {
+        GasVolume gasVolume = this.copy();
+        gasVolume.is_exposed = true;
+        return gasVolume;
+    }
+
+    public GasVolume unexposed() {
+        this.is_exposed = false;
+        return this;
+    }
+
+    public boolean breathable() {
+        for (Chemical gas : breathable_req.keySet()) {
+            if (breathability(gas) < 0.05) return false;
+        }
+        return breathable_pressure_req.contains(getPressure());
+    }
+
+    private double breathability(Chemical gas) {
+        if (!breathable_req.containsKey(gas)) return Double.NaN;
+        if (!breathable_req.get(gas).contains(contents.getOrDefault(gas, 0.)/volume)) return 0;
+        double req_min = breathable_req.get(gas).minInclusive(), req_max = breathable_req.get(gas).maxInclusive(), req_range = req_max - req_min;
+        double cur = contents.getOrDefault(gas, 0.)/volume;
+        double delta = Math.min(cur - req_min, req_max - cur);
+        if (Double.compare(req_min, 0.) == 0) delta = (req_max - cur)/2;
+        return delta/(req_range/2);
+    }
+
+    private Formatting double_to_format(double tmp) {
+        Formatting format = Formatting.GRAY;
+        if (tmp < 0.05) format = Formatting.DARK_RED;
+        else if (tmp < 0.1) format = Formatting.RED;
+        else if (tmp < 0.3) format = Formatting.GOLD;
+        else if (tmp < 0.7) format = Formatting.YELLOW;
+        else if (tmp < 0.9) format = Formatting.GREEN;
+        else if (tmp <= 1.0) format = Formatting.DARK_GREEN;
+        return format;
     }
 }

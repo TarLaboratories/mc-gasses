@@ -9,5 +9,6 @@ public class TartechDataGenerator implements DataGeneratorEntrypoint {
         FabricDataGenerator.Pack pack = fabricDataGenerator.createPack();
         pack.addProvider(EnglishLangProvider::new);
         pack.addProvider(FluidTagProvider::new);
+        pack.addProvider(ItemTagProvider::new);
     }
 }

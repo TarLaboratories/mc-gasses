@@ -33,7 +33,13 @@ public class EnglishLangProvider extends FabricLanguageProvider {
         translationBuilder.add("tartech.gas.c", "C: ");
         translationBuilder.add("tartech.gas.fluid_info", "Fluids present in this volume:");
         translationBuilder.add("tartech.gas.no_fluid_info", "There are no fluids present in this volume");
+        translationBuilder.add("tartech.gas.fluid_info_not_available", "Information about fluids present in this volume is not available");
         translationBuilder.add("tartech.gas.total", "Total gas:");
-        translationBuilder.add("tartech.gas.fluid_total", "Total fluid: ");
+        translationBuilder.add("tartech.gas.fluid_total", "Total fluid:");
+        translationBuilder.add("tartech.gas.exposed", "Is exposed to atmosphere:");
+        translationBuilder.add("tartech.yes", "Yes");
+        translationBuilder.add("tartech.no", "No");
+        translationBuilder.add("tag.item.tartech.chemical_fluid_buckets", "Buckets of chemicals");
+        translationBuilder.add("death.attack.no_air", "%s couldn't breathe");
     }
 }

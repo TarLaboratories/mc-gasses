@@ -1,10 +1,13 @@
 package org.tarlaboratories.tartech;
 
 import com.google.common.base.Objects;
+import com.mojang.serialization.Codec;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Uuids;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.PersistentState;
@@ -20,13 +23,16 @@ import org.tarlaboratories.tartech.gas.GasVolume;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 public class StateSaverAndLoader extends PersistentState {
     @SuppressWarnings("unused")
     private static final Logger LOGGER = LogManager.getLogger();
+    private static final Codec<Map<UUID, PlayerData>> PLAYER_DATA_CODEC = Codec.unboundedMap(Uuids.STRING_CODEC, PlayerData.CODEC);
     @SuppressWarnings("FieldMayBeFinal")
     private Map<ChunkPos, GasData> data;
+    private Map<UUID, PlayerData> player_data;
     private ServerWorld world;
     private @Nullable NbtCompound nbt = null;
     private static final Type<StateSaverAndLoader> type = new Type<>(
@@ -39,20 +45,23 @@ public class StateSaverAndLoader extends PersistentState {
 
     private StateSaverAndLoader() {
         this.data = new HashMap<>();
+        this.player_data = new HashMap<>();
     }
 
     @Override
     public NbtCompound writeNbt(@NotNull NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
         for (ChunkPos chunkPos : this.data.keySet()) {
-            this.data.get(chunkPos).deleteNotNeededData();
+            this.data.get(chunkPos).deleteNotNeededData(world);
             nbt.put(chunkPosToString.apply(chunkPos), GasData.CODEC.encodeStart(NbtOps.INSTANCE, this.data.get(chunkPos)).getOrThrow());
         }
+        nbt.put("player_data", PLAYER_DATA_CODEC.encodeStart(NbtOps.INSTANCE, this.player_data).getOrThrow());
         return nbt;
     }
 
     public static @NotNull StateSaverAndLoader createFromNbt(@NotNull NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
         StateSaverAndLoader state = new StateSaverAndLoader();
         state.nbt = nbt;
+        state.player_data = new HashMap<>(PLAYER_DATA_CODEC.decode(NbtOps.INSTANCE, nbt.get("player_data")).result().orElseThrow().getFirst());
         return state;
     }
 
@@ -106,6 +115,12 @@ public class StateSaverAndLoader extends PersistentState {
     
     public @NotNull GasVolume getGasVolumeAtPos(@NotNull BlockPos pos) {
         return this.getDataForChunk(this.world.getChunk(pos).getPos()).getGasVolumeAt(pos);
+    }
+
+    public static @NotNull PlayerData getPlayerData(@NotNull LivingEntity player) {
+        if (player.getServer() == null) return new PlayerData();
+        StateSaverAndLoader state = StateSaverAndLoader.getWorldState(player.getServer().getOverworld());
+        return state.player_data.computeIfAbsent(player.getUuid(), uuid -> new PlayerData());
     }
 
     @Override

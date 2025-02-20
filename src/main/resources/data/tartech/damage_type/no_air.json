@@ -1,0 +1,6 @@
+{
+  "message_id": "no_air",
+  "exhaustion": 0.1,
+  "scaling": "never",
+  "effects": "drowning"
+}
