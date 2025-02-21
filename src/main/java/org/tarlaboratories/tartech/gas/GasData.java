@@ -48,9 +48,16 @@ public class GasData {
             Codec.INT.fieldOf("max_volume_id").forGetter(GasData::getMaxVolumeId),
             Codec.INT.fieldOf("old_max_volume_id").forGetter(GasData::getOldMaxVolumeId),
             Codec.BOOL.fieldOf("initialized_data").forGetter(GasData::isInitializedData),
+            Codec.BOOL.fieldOf("needsUpdating").forGetter(GasData::needsUpdating),
             ChunkPos.CODEC.fieldOf("chunk_pos").forGetter(GasData::getChunkPos)
     ).apply(instance, GasData::new));
+
+    public boolean needsUpdating() {
+        return this.needsUpdating;
+    }
+
     public Chunk chunk;
+    protected boolean needsUpdating;
     protected ChunkPos chunkPos;
     protected RegistryKey<DimensionType> dimension;
     protected final HashMap<RegistryKey<DimensionType>, GasVolume> DEFAULT_GAS_VOLUMES = new HashMap<>(Map.of(
@@ -67,17 +74,17 @@ public class GasData {
         this.dimension = world.getRegistryManager().getOrThrow(RegistryKeys.DIMENSION_TYPE).getKey(world.getDimension()).orElseThrow();
     }
 
-    protected GasData(List<List<List<Integer>>> data, Map<Integer, GasVolume> gas_data, int max_volume_id, int old_max_volume_id, boolean initialized_data, ChunkPos pos) {
+    protected GasData(List<List<List<Integer>>> data, Map<Integer, GasVolume> gas_data, int max_volume_id, int old_max_volume_id, boolean initialized_data, boolean needsUpdating, ChunkPos pos) {
         this.data = new ArrayList<>(data);
         this.gas_data = new HashMap<>(gas_data);
         this.max_volume_id = max_volume_id;
         this.old_max_volume_id = old_max_volume_id;
         this.initialized_data = initialized_data;
+        this.needsUpdating = needsUpdating;
         this.chunkPos = pos;
     }
 
-    public void deleteNotNeededData(ServerWorld world) {
-        if (chunk.needsSaving()) this.updateVolumesInChunk(world);
+    public void deleteNotNeededData() {
         try {
             for (Integer i : this.gas_data.keySet()) {
                 if (i <= this.old_max_volume_id) {
@@ -182,7 +189,7 @@ public class GasData {
     */
     public static @NotNull GasVolume get(@NotNull BlockPos pos, @NotNull ServerWorld world) {
         GasData tmp = getEntityForChunk(world.getChunk(pos), world);
-        if (world.getChunk(pos).needsSaving()) tmp.updateVolumesInChunk(world);
+        if (tmp.needsUpdating()) tmp.updateVolumesInChunk(world);
         return tmp.getGasVolumeAt(pos);
     }
 
@@ -327,6 +334,7 @@ public class GasData {
             }
         }
         this.old_max_volume_id = old_max_volume_id;
+        this.needsUpdating = false;
         doLiquidCheck(world);
     }
 
@@ -409,6 +417,10 @@ public class GasData {
             gasVolume.addGas(Chemical.fromString("CO2"), 0.005);
         }
         return tmp;
+    }
+
+    public void markDirty() {
+        this.needsUpdating = true;
     }
 
     @Override

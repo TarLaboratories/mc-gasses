@@ -4,6 +4,7 @@
   "package": "org.tarlaboratories.tartech.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "ChunkModificationMixin"
   ],
   "injectors": {
     "defaultRequire": 1
