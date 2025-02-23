@@ -11,10 +11,10 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.tarlaboratories.tartech.events.ChunkModificationCallback;
+import org.tarlaboratories.tartech.events.BlockModificationCallback;
 
 @Mixin(World.class)
-public class ChunkModificationMixin {
+public class BlockModificationEventMixin {
     @Unique
     @SuppressWarnings("unused")
     private static final Logger LOGGER = LogManager.getLogger();
@@ -23,7 +23,7 @@ public class ChunkModificationMixin {
     private void onChunkModified(BlockPos pos, BlockState state, int flags, int maxUpdateDepth, CallbackInfoReturnable<Boolean> info) {
         World world = (World) (Object) this;
         if (world instanceof ServerWorld serverWorld) {
-            ChunkModificationCallback.EVENT.invoker().call(serverWorld, serverWorld.getChunk(pos));
+            BlockModificationCallback.EVENT.invoker().call(serverWorld, pos);
         }
     }
 }

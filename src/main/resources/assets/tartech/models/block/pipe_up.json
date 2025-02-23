@@ -1,0 +1,32 @@
+{
+  "textures": {
+    "pipe_end": "tartech:block/pipe_end",
+    "pipe_side": "tartech:block/pipe_side"
+  },
+  "elements": [
+    {
+      "from": [6, 10, 6],
+      "to": [10, 16, 10],
+      "faces": {
+        "up": {
+          "texture": "#pipe_end"
+        },
+        "down": {
+          "texture": "#pipe_end"
+        },
+        "north": {
+          "texture": "#pipe_side"
+        },
+        "south": {
+          "texture": "#pipe_side"
+        },
+        "east": {
+          "texture": "#pipe_side"
+        },
+        "west": {
+          "texture": "#pipe_side"
+        }
+      }
+    }
+  ]
+}

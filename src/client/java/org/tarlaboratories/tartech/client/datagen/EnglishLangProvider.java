@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
 import net.minecraft.registry.RegistryWrapper;
 import org.jetbrains.annotations.NotNull;
+import org.tarlaboratories.tartech.ModBlocks;
 import org.tarlaboratories.tartech.ModItems;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 
@@ -24,6 +25,8 @@ public class EnglishLangProvider extends FabricLanguageProvider {
         translationBuilder.add(ModItems.GAS_ANALYZER_ITEM, "Gas Analyzer");
         translationBuilder.add(ModItems.GAS_TEST_ITEM, "Debug Chunk Updater 3000");
         translationBuilder.add(ModItems.MAIN_ITEM_GROUP_KEY, "TarTech");
+        translationBuilder.add(ModBlocks.PIPE_BLOCK.asItem(), "Pipe");
+        translationBuilder.add(ModBlocks.PIPE_BLOCK, "Pipe");
         translationBuilder.add("tartech.gas.info", "Gas info:");
         translationBuilder.add("tartech.gas.temperature", "Temperature:");
         translationBuilder.add("tartech.gas.pressure", "Pressure:");
@@ -40,6 +43,7 @@ public class EnglishLangProvider extends FabricLanguageProvider {
         translationBuilder.add("tartech.yes", "Yes");
         translationBuilder.add("tartech.no", "No");
         translationBuilder.add("tag.item.tartech.chemical_fluid_buckets", "Buckets of chemicals");
+        translationBuilder.add("tag.item.tartech.debug", "Debug items");
         translationBuilder.add("death.attack.no_air", "%s couldn't breathe");
     }
 }

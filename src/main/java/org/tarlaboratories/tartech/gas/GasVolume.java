@@ -4,6 +4,9 @@ import com.google.common.base.Objects;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.network.RegistryByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -37,6 +40,7 @@ public class GasVolume {
     protected boolean is_exposed;
     protected HashMap<Chemical, Double> contents, liquid_contents;
     protected Set<Chemical> to_be_liquefied;
+    protected boolean do_liquid_check;
     public static final Map<Chemical, Range<Double>> breathable_req = Map.of(
             Chemical.OXYGEN, new Range<>(0.1, 0.3),
             Chemical.fromString("CO2"), new Range<>(0., 0.06)
@@ -44,6 +48,7 @@ public class GasVolume {
     public static final Range<Double> breathable_pressure_req = new Range<>(0.5, 1.5);
 
     protected void checkForLiquids() {
+        if (!do_liquid_check) return;
         for (Chemical gas : contents.keySet()) {
             if (gas.getProperties().boilingTemperature() > temperature) to_be_liquefied.add(gas);
         }
@@ -61,6 +66,9 @@ public class GasVolume {
             Codec.unboundedMap(Chemical.CODEC, Codec.DOUBLE).fieldOf("contents").forGetter(GasVolume::getContents),
             Codec.unboundedMap(Chemical.CODEC, Codec.DOUBLE).fieldOf("liquid_contents").forGetter(GasVolume::getLiquidContents)
     ).apply(instance, GasVolume::new));
+
+    @SuppressWarnings("unused")
+    public static final PacketCodec<RegistryByteBuf, GasVolume> PACKET_CODEC = PacketCodecs.registryCodec(CODEC);
 
     public Boolean isExposed() {
         return this.is_exposed;
@@ -87,6 +95,20 @@ public class GasVolume {
         contents = new HashMap<>();
         liquid_contents = new HashMap<>();
         to_be_liquefied = new HashSet<>();
+        do_liquid_check = true;
+    }
+
+    public GasVolume(boolean do_liquid_check) {
+        volume = 0;
+        total_gas = 0;
+        total_liquid = 0;
+        radioactivity = 0;
+        total_c = 0;
+        is_exposed = false;
+        contents = new HashMap<>();
+        liquid_contents = new HashMap<>();
+        to_be_liquefied = new HashSet<>();
+        this.do_liquid_check = do_liquid_check;
     }
 
     /**
@@ -103,6 +125,7 @@ public class GasVolume {
         this.is_exposed = is_exposed;
         this.contents = new HashMap<>(contents);
         this.liquid_contents = new HashMap<>(liquid_contents);
+        this.do_liquid_check = true;
     }
 
     /**
@@ -184,6 +207,10 @@ public class GasVolume {
         checkForLiquids();
     }
 
+    public void disableLiquidCheck() {
+        this.do_liquid_check = false;
+    }
+
     public Pair<Chemical, Double> getLiquidToBeLiquefied() {
         this.checkForLiquids();
         for (Chemical liquid : this.to_be_liquefied) {
@@ -214,8 +241,7 @@ public class GasVolume {
     }
 
     public double getGasAmount(Chemical gas) {
-        if (contents.containsKey(gas)) return contents.get(gas);
-        return 0;
+        return contents.getOrDefault(gas, 0.);
     }
 
     public int getVolume() {
@@ -314,7 +340,7 @@ public class GasVolume {
         out.append(Text.translatable("tartech.gas.pressure").append(Text.literal(String.format(" %f\n", getPressure())).formatted(double_to_format(2*delta/(breathable_pressure_req.maxInclusive() - breathable_pressure_req.minInclusive())))));
         if (display_volumes) {
             out.append(Text.translatable("tartech.gas.volume").append(String.format(" %d\n", volume)));
-            if (contents.isEmpty()) out.append(Text.translatable("tartech.gas.no_gas_info"));
+            if (contents.isEmpty()) out.append(Text.translatable("tartech.gas.no_gas_info")).append("\n");
             else {
                 out.append(Text.translatable("tartech.gas.gas_info")).append("\n");
                 for (Chemical gas : contents.keySet()) {

@@ -8,7 +8,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.tarlaboratories.tartech.events.ChunkModificationCallback;
+import org.tarlaboratories.tartech.events.BlockModificationCallback;
 import org.tarlaboratories.tartech.gas.GasData;
 
 public class ModEventListeners {
@@ -42,6 +42,6 @@ public class ModEventListeners {
                 player.setAir(StateSaverAndLoader.getPlayerData(player).getAir());
             }
         });
-        ChunkModificationCallback.EVENT.register((world, chunk) -> StateSaverAndLoader.getWorldState(world).getDataForChunk(chunk.getPos()).markDirty());
+        BlockModificationCallback.EVENT.register((world, pos) -> StateSaverAndLoader.getWorldState(world).getDataForChunk(world.getChunk(pos).getPos()).markDirty());
     }
 }

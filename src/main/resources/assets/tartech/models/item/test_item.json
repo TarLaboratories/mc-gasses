@@ -1,6 +1,5 @@
 {
 	"credit": "Made with Blockbench",
-	"parent": "gas_test_item",
 	"texture_size": [32, 32],
 	"textures": {
 		"0": "tartech:item/test_item",
