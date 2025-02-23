@@ -27,6 +27,8 @@ public class EnglishLangProvider extends FabricLanguageProvider {
         translationBuilder.add(ModItems.MAIN_ITEM_GROUP_KEY, "TarTech");
         translationBuilder.add(ModBlocks.PIPE_BLOCK.asItem(), "Pipe");
         translationBuilder.add(ModBlocks.PIPE_BLOCK, "Pipe");
+        translationBuilder.add(ModBlocks.PIPE_OPENING.asItem(), "Pipe Opening");
+        translationBuilder.add(ModBlocks.PIPE_OPENING, "Pipe Opening");
         translationBuilder.add("tartech.gas.info", "Gas info:");
         translationBuilder.add("tartech.gas.temperature", "Temperature:");
         translationBuilder.add("tartech.gas.pressure", "Pressure:");

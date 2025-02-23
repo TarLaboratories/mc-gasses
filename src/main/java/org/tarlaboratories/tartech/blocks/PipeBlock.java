@@ -70,7 +70,7 @@ public class PipeBlock extends BlockWithEntity implements Pipe {
     }
 
     @Override
-    protected MapCodec<? extends BlockWithEntity> getCodec() {
+    protected MapCodec<PipeBlock> getCodec() {
         return createCodec(PipeBlock::new);
     }
 
@@ -173,7 +173,7 @@ public class PipeBlock extends BlockWithEntity implements Pipe {
             if (world.getBlockEntity(i) instanceof PipeBlockEntity blockEntity && world.getBlockState(i).getBlock() instanceof Pipe pipe) {
                 ChemicalNetwork other = state.getChemicalNetwork(i);
                 if (other != null) network.mergeWith(new ChemicalNetwork(other.getPart(pipe.getCapacity())));
-                else network.addVolume(1);
+                else network.addVolume(pipe.getCapacity());
                 ids_to_remove.add(blockEntity.getChemicalNetworkId());
                 blockEntity.setChemicalNetworkId(id);
             }

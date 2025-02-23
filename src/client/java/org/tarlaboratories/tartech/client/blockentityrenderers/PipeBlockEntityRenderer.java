@@ -3,12 +3,10 @@ package org.tarlaboratories.tartech.client.blockentityrenderers;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.ModelTransformationMode;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RotationAxis;
@@ -17,6 +15,7 @@ import org.tarlaboratories.tartech.ChemicalNetwork;
 import org.tarlaboratories.tartech.ModItems;
 import org.tarlaboratories.tartech.blockentities.PipeBlockEntity;
 import org.tarlaboratories.tartech.client.ChemicalNetworkData;
+import org.tarlaboratories.tartech.client.RenderingUtils;
 
 import java.util.Objects;
 
@@ -73,9 +72,6 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
                     0, light
             );
         matrices.pop();
-        matrices.push();
-        matrices.translate(0.5, 0.5, 0.5);
-        context.getItemRenderer().renderItem(ModItems.RENDERING_ITEM.getWithModel("outline"), ModelTransformationMode.GROUND, 255, OverlayTexture.DEFAULT_UV, matrices, vertexConsumers, entity.getWorld(), 0);
-        matrices.pop();
+        RenderingUtils.highlight(entity.getPos(), matrices, vertexConsumers, context.getItemRenderer());
     }
 }

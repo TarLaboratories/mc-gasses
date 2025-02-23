@@ -13,6 +13,7 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
 import org.tarlaboratories.tartech.blocks.PipeBlock;
+import org.tarlaboratories.tartech.blocks.PipeOpeningBlock;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 
 import java.util.Map;
@@ -33,6 +34,9 @@ public class ModBlocks {
 
     public static final RegistryKey<Block> PIPE_BLOCK_KEY = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "pipe"));
     public static final Block PIPE_BLOCK = register(new PipeBlock(AbstractBlock.Settings.create().registryKey(PIPE_BLOCK_KEY)), PIPE_BLOCK_KEY, true);
+
+    public static final RegistryKey<Block> PIPE_OPENING_KEY = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "pipe_opening"));
+    public static final Block PIPE_OPENING = register(new PipeOpeningBlock(AbstractBlock.Settings.create().registryKey(PIPE_OPENING_KEY)), PIPE_OPENING_KEY, true);
 
     public static final TagKey<Block> PIPE_TAG = TagKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "pipes"));
 
