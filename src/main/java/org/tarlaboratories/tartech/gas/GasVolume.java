@@ -45,7 +45,7 @@ public class GasVolume {
             Chemical.OXYGEN, new Range<>(0.1, 0.3),
             Chemical.fromString("CO2"), new Range<>(0., 0.06)
     );
-    public static final Range<Double> breathable_pressure_req = new Range<>(0.5, 1.5);
+    public static final Range<Double> breathable_pressure_req = new Range<>(0.5, Double.POSITIVE_INFINITY);
 
     protected void checkForLiquids() {
         if (!do_liquid_check) return;
