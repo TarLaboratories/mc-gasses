@@ -118,7 +118,8 @@ public class PipeBlock extends BlockWithEntity implements Pipe {
     public BlockState getPlacementState(@NotNull ItemPlacementContext context) {
         BlockPos pos = context.getBlockPos();
         Direction side = context.getSide().getOpposite();
-        if (context.getWorld().getBlockState(pos.offset(side)).isIn(ModBlocks.PIPE_TAG)) return this.getDefaultState().with(CONNECTIONS.get(side), true);
+        BlockState state = context.getWorld().getBlockState(pos.offset(side));
+        if (state.getBlock() instanceof PipeConnectable connectable && connectable.shouldConnect(state, side.getOpposite())) return this.getDefaultState().with(CONNECTIONS.get(side), true);
         else return super.getPlacementState(context);
     }
 
@@ -127,6 +128,11 @@ public class PipeBlock extends BlockWithEntity implements Pipe {
         Collection<BlockPos> out = new ArrayList<>();
         for (Direction direction : Direction.values()) if (state.get(CONNECTIONS.get(direction))) out.add(pos.offset(direction));
         return out;
+    }
+
+    @Override
+    public BooleanProperty getConnectionProperty(Direction direction) {
+        return CONNECTIONS.get(direction);
     }
 
     @Override
@@ -179,5 +185,10 @@ public class PipeBlock extends BlockWithEntity implements Pipe {
             }
         }
         for (Integer i : ids_to_remove) state.deleteChemicalNetwork(i);
+    }
+
+    @Override
+    public boolean shouldConnect(BlockState state, Direction direction) {
+        return true;
     }
 }

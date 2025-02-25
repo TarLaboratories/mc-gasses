@@ -5,11 +5,15 @@ import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.block.Blocks;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import org.tarlaboratories.tartech.ModBlockEntities;
 import org.tarlaboratories.tartech.ModFluids;
@@ -17,14 +21,15 @@ import org.tarlaboratories.tartech.blockentities.PipeBlockEntity;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 import org.tarlaboratories.tartech.client.blockentityrenderers.PipeBlockEntityRenderer;
 import org.tarlaboratories.tartech.fluids.ChemicalFluid;
-import org.tarlaboratories.tartech.networking.ChemicalNetworkDataPayload;
-import org.tarlaboratories.tartech.networking.ChemicalNetworkIdChangePayload;
-import org.tarlaboratories.tartech.networking.GasCondensationPayload;
-import org.tarlaboratories.tartech.networking.LiquidEvaporationPayload;
+import org.tarlaboratories.tartech.gas.GasVolume;
+import org.tarlaboratories.tartech.networking.*;
 
 import java.util.Objects;
 
 public class TartechClient implements ClientModInitializer {
+    private static GasVolume player_volume = null;
+    private static long last_volume_update = Util.getMeasuringTimeMs();
+
     public void registerFluidRenderHandlers() {
         Chemical.forEachChemical(((chemical, properties) -> {
             ChemicalFluid.Still still = ModFluids.CHEMICAL_FLUIDS.get(chemical).getLeft();
@@ -65,10 +70,29 @@ public class TartechClient implements ClientModInitializer {
             if (Objects.requireNonNull(context.client().world).getBlockEntity(pos) instanceof PipeBlockEntity blockEntity) blockEntity.setChemicalNetworkId(new_id);
         }));
         ClientPlayNetworking.registerGlobalReceiver(ChemicalNetworkDataPayload.ID, ChemicalNetworkData::receivePayload);
+        ClientPlayNetworking.registerGlobalReceiver(GasVolumeDataPayload.ID, ((payload, context) -> {
+            player_volume = payload.volume();
+            last_volume_update = Util.getMeasuringTimeMs();
+        }));
+    }
+
+    public void registerHUDRenderers() {
+        HudRenderCallback.EVENT.register((context, ticks) -> {
+            if (!RenderingUtils.shouldRenderDebug()) return;
+            if (player_volume == null || last_volume_update + 500 < Util.getMeasuringTimeMs()) {
+                if (MinecraftClient.getInstance().player == null) return;
+                ClientPlayNetworking.send(new GasVolumeDataRequestPayload(MinecraftClient.getInstance().player.getBlockPos()));
+                if (player_volume == null) return;
+            }
+            Text text = player_volume.getInfo(true);
+            String[] lines = text.getString().split("\n");
+            for (int i = 0; i < lines.length; i++)
+                context.drawText(MinecraftClient.getInstance().textRenderer, lines[i], 0, 8*i, 0xFFFFFF, true);
+        });
     }
 
     public void registerBlockEntityRenderers() {
-        BlockEntityRendererFactories.register(ModBlockEntities.PIPE_BLOCK_ENTITY, PipeBlockEntityRenderer::new);
+        BlockEntityRendererFactories.register(ModBlockEntities.PIPE, PipeBlockEntityRenderer::new);
     }
 
     @Override
@@ -76,5 +100,6 @@ public class TartechClient implements ClientModInitializer {
         registerFluidRenderHandlers();
         registerNetworkingReceivers();
         registerBlockEntityRenderers();
+        registerHUDRenderers();
     }
 }

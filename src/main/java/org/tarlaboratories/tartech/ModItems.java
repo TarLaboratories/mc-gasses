@@ -55,7 +55,7 @@ public class ModItems {
             itemGroup.add(TEST_ITEM);
             itemGroup.add(GAS_ANALYZER_ITEM);
             itemGroup.add(GAS_TEST_ITEM);
-            itemGroup.add(ModBlocks.PIPE_BLOCK.asItem());
+            itemGroup.add(ModBlocks.PIPE.asItem());
             itemGroup.add(ModBlocks.PIPE_OPENING.asItem());
             for (Item bucket : CHEMICAL_FLUID_BUCKETS.values()) itemGroup.add(bucket);
         });

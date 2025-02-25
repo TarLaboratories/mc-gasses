@@ -32,8 +32,8 @@ public class ModBlocks {
     public static final Map<Chemical, RegistryKey<Block>> CHEMICAL_FLUID_BLOCK_KEYS = Chemical.forEachChemical(((chemical, properties) -> RegistryKey.of(RegistryKeys.BLOCK, Identifier.of("chemical_fluid_" + chemical.toIdentifierString()))));
     public static final Map<Chemical, Block> CHEMICAL_FLUID_BLOCKS = Chemical.forEachChemical(((chemical, properties) -> register(new FluidBlock(ModFluids.CHEMICAL_FLUIDS.get(chemical).getLeft(), Blocks.WATER.getSettings()), CHEMICAL_FLUID_BLOCK_KEYS.get(chemical), false)));
 
-    public static final RegistryKey<Block> PIPE_BLOCK_KEY = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "pipe"));
-    public static final Block PIPE_BLOCK = register(new PipeBlock(AbstractBlock.Settings.create().registryKey(PIPE_BLOCK_KEY)), PIPE_BLOCK_KEY, true);
+    public static final RegistryKey<Block> PIPE_KEY = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "pipe"));
+    public static final Block PIPE = register(new PipeBlock(AbstractBlock.Settings.create().registryKey(PIPE_KEY)), PIPE_KEY, true);
 
     public static final RegistryKey<Block> PIPE_OPENING_KEY = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "pipe_opening"));
     public static final Block PIPE_OPENING = register(new PipeOpeningBlock(AbstractBlock.Settings.create().registryKey(PIPE_OPENING_KEY)), PIPE_OPENING_KEY, true);

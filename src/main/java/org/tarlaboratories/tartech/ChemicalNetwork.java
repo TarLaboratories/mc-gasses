@@ -43,13 +43,13 @@ public class ChemicalNetwork {
     }
 
     public GasVolume getFilteredPart(int volume, BiPredicate<Chemical, Double> filter) {
-        GasVolume out = this.contents.getPart(volume).multiplyContentsBy(0);
+        GasVolume tmp = this.contents.getPart(volume);
+        GasVolume out = tmp.copy().multiplyContentsBy(0);
         for (Chemical chemical : this.contents.getContents().keySet()) {
             if (filter.test(chemical, this.contents.getGasAmount(chemical))) {
-                out.addGas(chemical, this.contents.getPart(volume).getGasAmount(chemical));
+                out.addGas(chemical, tmp.getGasAmount(chemical));
             }
         }
-        for (Chemical chemical : out.getContents().keySet()) this.contents.removeGas(chemical, out.getGasAmount(chemical));
         return out;
     }
 
@@ -73,7 +73,19 @@ public class ChemicalNetwork {
         this.contents.mergeWith(other.getContents());
     }
 
+    public void multiplyContentsBy(double k) {
+        this.contents.multiplyContentsBy(k);
+    }
+
     public Text getInfo() {
         return this.contents.getInfo(true);
+    }
+
+    public double getVolume() {
+        return this.contents.getVolume();
+    }
+
+    public void mergeContentsWith(GasVolume other) {
+        this.contents.mergeWith(other);
     }
 }

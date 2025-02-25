@@ -12,7 +12,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec3d;
 import org.tarlaboratories.tartech.ChemicalNetwork;
-import org.tarlaboratories.tartech.ModItems;
 import org.tarlaboratories.tartech.blockentities.PipeBlockEntity;
 import org.tarlaboratories.tartech.client.ChemicalNetworkData;
 import org.tarlaboratories.tartech.client.RenderingUtils;
@@ -29,7 +28,8 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
     @Override
     public void render(PipeBlockEntity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         ClientPlayerEntity player = MinecraftClient.getInstance().player;
-        if (player == null || !player.getOffHandStack().isIn(ModItems.DEBUG_TAG)) return;
+        if (!RenderingUtils.shouldRenderDebug()) return;
+        assert player != null;
         matrices.push();
         matrices.translate(0.5, 1, 0.5);
         matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(90));
@@ -46,7 +46,8 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
                 TextRenderer.TextLayerType.SEE_THROUGH,
                 0, light
         );
-        Vec3d idk = player.raycast(player.getBlockInteractionRange(), tickDelta, false).getPos();
+        if (MinecraftClient.getInstance().crosshairTarget == null) return;
+        Vec3d idk = MinecraftClient.getInstance().crosshairTarget.getPos();
         if (!Objects.equals(entity.getPos(), BlockPos.ofFloored(idk))) {
             matrices.pop();
             return;

@@ -413,8 +413,8 @@ public class GasData {
         GasVolume gasVolume = get(pos, player.getServerWorld());
         boolean tmp = gasVolume.breathable();
         if (tmp) {
-            gasVolume.removeGas(Chemical.OXYGEN, 0.005);
-            gasVolume.addGas(Chemical.fromString("CO2"), 0.005);
+            gasVolume.removeGas(Chemical.OXYGEN, 0.001);
+            gasVolume.addGas(Chemical.fromString("CO2"), 0.001);
         }
         return tmp;
     }

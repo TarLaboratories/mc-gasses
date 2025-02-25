@@ -17,6 +17,6 @@ public class BlockTagProvider extends FabricTagProvider<Block> {
     @Override
     protected void configure(RegistryWrapper.WrapperLookup wrapperLookup) {
         FabricTagBuilder builder = getOrCreateTagBuilder(ModBlocks.PIPE_TAG);
-        builder.add(ModBlocks.PIPE_BLOCK);
+        builder.add(ModBlocks.PIPE);
     }
 }

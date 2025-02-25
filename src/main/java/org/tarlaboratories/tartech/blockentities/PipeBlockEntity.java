@@ -21,7 +21,7 @@ public class PipeBlockEntity extends BlockEntity {
     private int chemical_network_id;
 
     public PipeBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.PIPE_BLOCK_ENTITY, pos, state);
+        super(ModBlockEntities.PIPE, pos, state);
     }
 
     public void setChemicalNetworkId(int id) {

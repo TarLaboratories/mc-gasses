@@ -45,7 +45,7 @@ public class GasVolume {
             Chemical.OXYGEN, new Range<>(0.1, 0.3),
             Chemical.fromString("CO2"), new Range<>(0., 0.06)
     );
-    public static final Range<Double> breathable_pressure_req = new Range<>(0.5, Double.POSITIVE_INFINITY);
+    public static final Range<Double> breathable_pressure_req = new Range<>(0.5, 1.5);
 
     protected void checkForLiquids() {
         if (!do_liquid_check) return;
@@ -275,7 +275,6 @@ public class GasVolume {
             this.temperature = (this.temperature*this.total_c + other.temperature*other.total_c)/(this.total_c + other.total_c);
         else if (this.volume != 0)
             this.temperature = (this.temperature*(this.volume - other.volume) + other.temperature*other.volume)/this.volume;
-        this.total_c += other.total_c;
         for (Chemical gas : other.getContents().keySet()) {
             this.addGas(gas, other.getContents().get(gas));
         }

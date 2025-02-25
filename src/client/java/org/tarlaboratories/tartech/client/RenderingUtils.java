@@ -47,4 +47,10 @@ public class RenderingUtils {
         itemRenderer.renderItem(ModItems.RENDERING_ITEM.getWithModel("outline"), ModelTransformationMode.GROUND, 255, OverlayTexture.DEFAULT_UV, matrices, vertexConsumers, world, 0);
         matrices.pop();
     }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public static boolean shouldRenderDebug() {
+        if (MinecraftClient.getInstance().player == null) return false;
+        return MinecraftClient.getInstance().player.getOffHandStack().isIn(ModItems.DEBUG_TAG);
+    }
 }

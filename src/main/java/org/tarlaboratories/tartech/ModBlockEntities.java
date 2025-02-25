@@ -8,6 +8,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 import org.tarlaboratories.tartech.blockentities.PipeBlockEntity;
+import org.tarlaboratories.tartech.blockentities.PipeOpeningBlockEntity;
 
 public class ModBlockEntities {
     @SuppressWarnings("SameParameterValue")
@@ -18,5 +19,6 @@ public class ModBlockEntities {
         return Registry.register(Registries.BLOCK_ENTITY_TYPE, id, FabricBlockEntityTypeBuilder.<T>create(entityFactory, blocks).build());
     }
 
-    public static final BlockEntityType<PipeBlockEntity> PIPE_BLOCK_ENTITY = register("pipe", PipeBlockEntity::new, ModBlocks.PIPE_BLOCK);
+    public static final BlockEntityType<PipeBlockEntity> PIPE = register("pipe", PipeBlockEntity::new, ModBlocks.PIPE);
+    public static final BlockEntityType<PipeOpeningBlockEntity> PIPE_OPENING = register("pipe_opening", PipeOpeningBlockEntity::new, ModBlocks.PIPE_OPENING);
 }
