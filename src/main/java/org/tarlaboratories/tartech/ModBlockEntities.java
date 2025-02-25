@@ -11,7 +11,6 @@ import org.tarlaboratories.tartech.blockentities.PipeBlockEntity;
 import org.tarlaboratories.tartech.blockentities.PipeOpeningBlockEntity;
 
 public class ModBlockEntities {
-    @SuppressWarnings("SameParameterValue")
     private static <T extends BlockEntity> BlockEntityType<T> register(String name,
                                                                        FabricBlockEntityTypeBuilder.Factory<? extends T> entityFactory,
                                                                        Block... blocks) {
@@ -19,6 +18,6 @@ public class ModBlockEntities {
         return Registry.register(Registries.BLOCK_ENTITY_TYPE, id, FabricBlockEntityTypeBuilder.<T>create(entityFactory, blocks).build());
     }
 
-    public static final BlockEntityType<PipeBlockEntity> PIPE = register("pipe", PipeBlockEntity::new, ModBlocks.PIPE);
+    public static final BlockEntityType<PipeBlockEntity> PIPE = register("pipe", PipeBlockEntity::new, ModBlocks.PIPE, ModBlocks.FULL_PIPE);
     public static final BlockEntityType<PipeOpeningBlockEntity> PIPE_OPENING = register("pipe_opening", PipeOpeningBlockEntity::new, ModBlocks.PIPE_OPENING);
 }

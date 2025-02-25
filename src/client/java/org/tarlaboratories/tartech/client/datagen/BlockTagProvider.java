@@ -5,7 +5,6 @@ import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
 import net.minecraft.block.Block;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.RegistryWrapper;
-import org.tarlaboratories.tartech.ModBlocks;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -16,7 +15,6 @@ public class BlockTagProvider extends FabricTagProvider<Block> {
 
     @Override
     protected void configure(RegistryWrapper.WrapperLookup wrapperLookup) {
-        FabricTagBuilder builder = getOrCreateTagBuilder(ModBlocks.PIPE_TAG);
-        builder.add(ModBlocks.PIPE);
+
     }
 }

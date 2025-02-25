@@ -10,8 +10,8 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
+import org.tarlaboratories.tartech.blocks.FullPipeBlock;
 import org.tarlaboratories.tartech.blocks.PipeBlock;
 import org.tarlaboratories.tartech.blocks.PipeOpeningBlock;
 import org.tarlaboratories.tartech.chemistry.Chemical;
@@ -35,10 +35,11 @@ public class ModBlocks {
     public static final RegistryKey<Block> PIPE_KEY = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "pipe"));
     public static final Block PIPE = register(new PipeBlock(AbstractBlock.Settings.create().registryKey(PIPE_KEY)), PIPE_KEY, true);
 
+    public static final RegistryKey<Block> FULL_PIPE_KEY = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "full_pipe"));
+    public static final Block FULL_PIPE = register(new FullPipeBlock(AbstractBlock.Settings.create().registryKey(FULL_PIPE_KEY)), FULL_PIPE_KEY, true);
+
     public static final RegistryKey<Block> PIPE_OPENING_KEY = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "pipe_opening"));
     public static final Block PIPE_OPENING = register(new PipeOpeningBlock(AbstractBlock.Settings.create().registryKey(PIPE_OPENING_KEY)), PIPE_OPENING_KEY, true);
-
-    public static final TagKey<Block> PIPE_TAG = TagKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "pipes"));
 
     public static void initialize() {}
 }

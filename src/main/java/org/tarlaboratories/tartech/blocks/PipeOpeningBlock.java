@@ -21,7 +21,6 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.tarlaboratories.tartech.ModBlockEntities;
-import org.tarlaboratories.tartech.ModBlocks;
 import org.tarlaboratories.tartech.blockentities.PipeOpeningBlockEntity;
 
 import java.util.Map;
@@ -55,7 +54,7 @@ public class PipeOpeningBlock extends BlockWithEntity implements PipeConnectable
     @Override
     public void onPlaced(@NotNull World world, @NotNull BlockPos pos, @NotNull BlockState state, LivingEntity placer, ItemStack itemStack) {
         BlockState state2 = world.getBlockState(pos.offset(state.get(ATTACHED_TO)));
-        if (state2.isIn(ModBlocks.PIPE_TAG) && state2.getBlock() instanceof Pipe pipe) {
+        if (state2.getBlock() instanceof Pipe pipe) {
             world.setBlockState(pos.offset(state.get(ATTACHED_TO)), state2.withIfExists(pipe.getConnectionProperty(state.get(ATTACHED_TO).getOpposite()), true));
         }
     }
@@ -93,5 +92,15 @@ public class PipeOpeningBlock extends BlockWithEntity implements PipeConnectable
     @Override
     public boolean shouldConnect(@NotNull BlockState state, Direction direction) {
         return state.get(ATTACHED_TO).equals(direction);
+    }
+
+    @Override
+    public boolean shouldAutoConnect(BlockState state, Direction direction) {
+        return shouldConnect(state, direction);
+    }
+
+    @Override
+    public boolean isConnected(BlockState state, Direction direction) {
+        return shouldConnect(state, direction);
     }
 }
