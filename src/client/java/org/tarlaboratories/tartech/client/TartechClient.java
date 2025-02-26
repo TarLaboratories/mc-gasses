@@ -79,12 +79,12 @@ public class TartechClient implements ClientModInitializer {
 
     public void registerHUDRenderers() {
         HudRenderCallback.EVENT.register((context, ticks) -> {
-            if (!RenderingUtils.shouldRenderDebug()) return;
             if (player_volume == null || last_volume_update + 500 < Util.getMeasuringTimeMs()) {
                 if (MinecraftClient.getInstance().player == null) return;
                 ClientPlayNetworking.send(new GasVolumeDataRequestPayload(MinecraftClient.getInstance().player.getBlockPos()));
                 if (player_volume == null) return;
             }
+            if (!RenderingUtils.shouldRenderDebug()) return;
             List<Text> text = player_volume.getInfo(true);
             for (int i = 0; i < text.size(); i++)
                 context.drawText(MinecraftClient.getInstance().textRenderer, text.get(i), 0, 8*i, 0xFFFFFF, true);
