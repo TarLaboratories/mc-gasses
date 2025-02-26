@@ -83,7 +83,7 @@ public class ModCommands {
         final ServerCommandSource source = context.getSource();
         final StateSaverAndLoader state = StateSaverAndLoader.getWorldState(source.getWorld());
         final BlockPos pos = source.getEntityOrThrow().getBlockPos();
-        source.sendFeedback(() -> state.getGasVolumeAtPos(pos).getInfo(true), false);
+        state.getGasVolumeAtPos(pos).getInfo(true).forEach(text -> source.sendFeedback(() -> text, false));
         return 0;
     };
 
@@ -91,7 +91,7 @@ public class ModCommands {
         final ServerCommandSource source = context.getSource();
         final StateSaverAndLoader state = StateSaverAndLoader.getWorldState(source.getWorld());
         final BlockPos pos = BlockPosArgumentType.getBlockPos(context, "pos");
-        source.sendFeedback(() -> state.getGasVolumeAtPos(pos).getInfo(true), false);
+        state.getGasVolumeAtPos(pos).getInfo(true).forEach(text -> source.sendFeedback(() -> text, false));
         return 0;
     };
 

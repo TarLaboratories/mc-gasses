@@ -174,6 +174,7 @@ public class GasData {
     public @NotNull GasVolume getGasVolumeAt(@NotNull BlockPos pos) {
         int tmp = this.getVolumeIdAt(pos);
         if (tmp == -1 && this.canContainGas(pos)) {
+            if (this.canSeeSky(pos)) return this.getDefaultGasVolume().multiplyContentsBy(10000).addVolume(10000).exposed();
             LOGGER.warn("volume id is -1, but block can contain gas at pos = {}", pos);
             return (new GasVolume()).addVolume(1);
         } else if (tmp == -1) return new GasVolume();

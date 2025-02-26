@@ -24,10 +24,11 @@ import org.tarlaboratories.tartech.fluids.ChemicalFluid;
 import org.tarlaboratories.tartech.gas.GasVolume;
 import org.tarlaboratories.tartech.networking.*;
 
+import java.util.List;
 import java.util.Objects;
 
 public class TartechClient implements ClientModInitializer {
-    private static GasVolume player_volume = null;
+    public static GasVolume player_volume = null;
     private static long last_volume_update = Util.getMeasuringTimeMs();
 
     public void registerFluidRenderHandlers() {
@@ -84,10 +85,9 @@ public class TartechClient implements ClientModInitializer {
                 ClientPlayNetworking.send(new GasVolumeDataRequestPayload(MinecraftClient.getInstance().player.getBlockPos()));
                 if (player_volume == null) return;
             }
-            Text text = player_volume.getInfo(true);
-            String[] lines = text.getString().split("\n");
-            for (int i = 0; i < lines.length; i++)
-                context.drawText(MinecraftClient.getInstance().textRenderer, lines[i], 0, 8*i, 0xFFFFFF, true);
+            List<Text> text = player_volume.getInfo(true);
+            for (int i = 0; i < text.size(); i++)
+                context.drawText(MinecraftClient.getInstance().textRenderer, text.get(i), 0, 8*i, 0xFFFFFF, true);
         });
     }
 

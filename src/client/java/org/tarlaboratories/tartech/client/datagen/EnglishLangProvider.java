@@ -22,7 +22,7 @@ public class EnglishLangProvider extends FabricLanguageProvider {
             return null;
         });
         translationBuilder.add(ModItems.TEST_ITEM, "Debug Chunk Reinitializator 3000");
-        translationBuilder.add(ModItems.GAS_ANALYZER_ITEM, "Gas Analyzer");
+        translationBuilder.add(ModItems.GAS_ANALYSER_ITEM, "Gas Analyzer");
         translationBuilder.add(ModItems.GAS_TEST_ITEM, "Debug Chunk Updater 3000");
         translationBuilder.add(ModItems.MAIN_ITEM_GROUP_KEY, "TarTech");
         translationBuilder.add(ModBlocks.PIPE.asItem(), "Pipe");

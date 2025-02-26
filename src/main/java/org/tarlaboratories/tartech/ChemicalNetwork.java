@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 import org.tarlaboratories.tartech.gas.GasVolume;
 
+import java.util.List;
 import java.util.function.BiPredicate;
 
 @SuppressWarnings("unused")
@@ -77,7 +78,7 @@ public class ChemicalNetwork {
         this.contents.multiplyContentsBy(k);
     }
 
-    public Text getInfo() {
+    public List<Text> getInfo() {
         return this.contents.getInfo(true);
     }
 

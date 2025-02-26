@@ -9,11 +9,10 @@ import net.minecraft.util.Hand;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.tarlaboratories.tartech.gas.GasVolume;
-import org.tarlaboratories.tartech.chemistry.Chemical;
 import org.tarlaboratories.tartech.gas.GasData;
 
-public class GasAnalyzerItem extends Item {
-    public GasAnalyzerItem(Settings settings) {
+public class GasAnalyserItem extends Item {
+    public GasAnalyserItem(Settings settings) {
         super(settings);
     }
 
@@ -25,7 +24,7 @@ public class GasAnalyzerItem extends Item {
                 return ActionResult.FAIL;
             }
             GasVolume data = GasData.get(player.getBlockPos(), world);
-            player.sendMessage(data.getInfo(player.isCreative()), false);
+            data.getInfo(player.isCreative()).forEach(text -> player.sendMessage(text, false));
             return ActionResult.SUCCESS;
         } else return ActionResult.PASS;
     }

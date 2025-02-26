@@ -16,6 +16,7 @@ import org.tarlaboratories.tartech.blockentities.PipeBlockEntity;
 import org.tarlaboratories.tartech.client.ChemicalNetworkData;
 import org.tarlaboratories.tartech.client.RenderingUtils;
 
+import java.util.List;
 import java.util.Objects;
 
 public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEntity> {
@@ -57,13 +58,12 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
         matrices.scale(1/4f, 1/4f, 1/4f);
         matrices.multiply(RotationAxis.NEGATIVE_Y.rotationDegrees(180 - Math.round(player.getYaw()/90)*90), 36, 0,-36);
         ChemicalNetwork data = ChemicalNetworkData.getOrRequest(entity.getChemicalNetworkId());
-        Text chemical_network_info;
-        if (data == null) chemical_network_info = Text.of("Requesting data...");
+        List<Text> chemical_network_info;
+        if (data == null) chemical_network_info = List.of(Text.of("Requesting data..."));
         else chemical_network_info = data.getInfo();
-        String[] lines = chemical_network_info.getString().split("\n");
-        for (int i = 0; i < lines.length; i++)
+        for (int i = 0; i < chemical_network_info.size(); i++)
             context.getTextRenderer().draw(
-                    lines[i],
+                    chemical_network_info.get(i),
                     0, 8*i,
                     0xFF00FF,
                     true,

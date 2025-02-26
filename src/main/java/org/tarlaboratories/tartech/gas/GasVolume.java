@@ -19,10 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 import org.tarlaboratories.tartech.fluids.ChemicalFluid;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Represents the state of a volume of gas.
@@ -327,51 +324,50 @@ public class GasVolume {
 
     /**
      * @param extended whether to include information that typically is not available to survival players
-     * @return a {@code Text} object containing human-readable information about this {@code GasVolume}
+     * @return a list of {@code Text} containing human-readable information about this {@code GasVolume}, where each element represents a line
      */
-    public Text getInfo(boolean extended) {
+    public List<Text> getInfo(boolean extended) {
         boolean display_volumes = (this.volume <= 1000) || extended;
-        MutableText out = Text.empty();
-        out.append(Text.translatable("tartech.gas.info")).append("\n");
-        out.append(Text.translatable("tartech.gas.temperature").append(String.format(" %f\n", temperature)));
+        List<Text> out = new ArrayList<>();
+        out.add(Text.translatable("tartech.gas.info"));
+        out.add(Text.translatable("tartech.gas.temperature").append(String.format(" %f", temperature)));
         double delta = Math.min(getPressure() - breathable_pressure_req.minInclusive(), breathable_pressure_req.maxInclusive() - getPressure());
         if (!breathable_pressure_req.contains(getPressure())) delta = 0;
-        out.append(Text.translatable("tartech.gas.pressure").append(Text.literal(String.format(" %f\n", getPressure())).formatted(double_to_format(2*delta/(breathable_pressure_req.maxInclusive() - breathable_pressure_req.minInclusive())))));
+        out.add(Text.translatable("tartech.gas.pressure").append(Text.literal(String.format(" %f", getPressure())).formatted(double_to_format(2*delta/(breathable_pressure_req.maxInclusive() - breathable_pressure_req.minInclusive())))));
         if (display_volumes) {
-            out.append(Text.translatable("tartech.gas.volume").append(String.format(" %d\n", volume)));
-            if (contents.isEmpty()) out.append(Text.translatable("tartech.gas.no_gas_info")).append("\n");
+            out.add(Text.translatable("tartech.gas.volume").append(String.format(" %d", volume)));
+            if (contents.isEmpty()) out.add(Text.translatable("tartech.gas.no_gas_info"));
             else {
-                out.append(Text.translatable("tartech.gas.gas_info")).append("\n");
+                out.add(Text.translatable("tartech.gas.gas_info"));
                 for (Chemical gas : contents.keySet()) {
-                    MutableText text = Text.literal(String.format("%s: %d mB (%.2f%%)\n", gas.toString(), Math.round(contents.get(gas)*1000), contents.get(gas)*100/volume));
+                    MutableText text = Text.literal(String.format("%s: %d mB (%.2f%%)", gas.toString(), Math.round(contents.get(gas)*1000), contents.get(gas)*100/volume));
                     double tmp = breathability(gas);
-                    out.append(text.formatted(double_to_format(tmp)));
+                    out.add(text.formatted(double_to_format(tmp)));
                 }
-                out.append(Text.translatable("tartech.gas.total")).append(String.format(" %d mB\n", Math.round(total_gas*1000)));
+                out.add(Text.translatable("tartech.gas.total").append(String.format(" %d mB", Math.round(total_gas*1000))));
             }
         } else {
-            out.append(Text.translatable("tartech.gas.volume").append(">1000 B\n"));
-            if (contents.isEmpty()) out.append(Text.translatable("tartech.gas.no_gas_info")).append("\n");
-            else out.append(Text.translatable("tartech.gas.gas_info")).append("\n");
+            out.add(Text.translatable("tartech.gas.volume").append(">1000 B"));
+            if (contents.isEmpty()) out.add(Text.translatable("tartech.gas.no_gas_info"));
+            else out.add(Text.translatable("tartech.gas.gas_info"));
             for (Chemical gas : contents.keySet()) {
-                MutableText text = Text.literal(String.format("%s: %.2f%%\n", gas.toString(), contents.get(gas)*100/volume));
+                MutableText text = Text.literal(String.format("%s: %.2f%%", gas.toString(), contents.get(gas)*100/volume));
                 double tmp = breathability(gas);
-                out.append(text.formatted(double_to_format(tmp)));
+                out.add(text.formatted(double_to_format(tmp)));
             }
         }
-        out.append(Text.translatable("tartech.gas.exposed")).append(" ").append(is_exposed ? Text.translatable("tartech.yes") : Text.translatable("tartech.no"));
+        out.add(Text.translatable("tartech.gas.exposed").append(" ").append(is_exposed ? Text.translatable("tartech.yes") : Text.translatable("tartech.no")));
         if (extended) {
-            out.append("\n");
-            MutableText extended_info = Text.empty();
-            extended_info.append(Text.translatable("tartech.gas.c")).append(String.format(" %f\n", total_c));
-            if (is_exposed) extended_info.append(Text.translatable("tartech.gas.fluid_info_not_available"));
-            else if (liquid_contents.isEmpty()) extended_info.append(Text.translatable("tartech.gas.no_fluid_info"));
+            List<MutableText> extended_info = new ArrayList<>();
+            extended_info.add(Text.translatable("tartech.gas.c").append(String.format(" %f", total_c)));
+            if (is_exposed) extended_info.add(Text.translatable("tartech.gas.fluid_info_not_available"));
+            else if (liquid_contents.isEmpty()) extended_info.add(Text.translatable("tartech.gas.no_fluid_info"));
             else {
-                extended_info.append(Text.translatable("tartech.gas.fluid_info")).append("\n");
-                for (Chemical gas : liquid_contents.keySet()) extended_info.append(String.format("%s: %d mB (%.2f%%)\n", gas.toString(), Math.round(liquid_contents.get(gas)*1000), liquid_contents.get(gas)*100/volume));
-                extended_info.append(Text.translatable("tartech.gas.fluid_total")).append(String.format(" %d mB", Math.round(total_liquid*1000)));
+                extended_info.add(Text.translatable("tartech.gas.fluid_info"));
+                for (Chemical gas : liquid_contents.keySet()) extended_info.add(Text.literal(String.format("%s: %d mB (%.2f%%)", gas.toString(), Math.round(liquid_contents.get(gas)*1000), liquid_contents.get(gas)*100/volume)));
+                extended_info.add(Text.translatable("tartech.gas.fluid_total").append(String.format(" %d mB", Math.round(total_liquid*1000))));
             }
-            out.append(extended_info.formatted(Formatting.LIGHT_PURPLE));
+            extended_info.forEach(text -> out.add(text.formatted(Formatting.LIGHT_PURPLE)));
         }
         return out;
     }

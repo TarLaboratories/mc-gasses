@@ -14,7 +14,7 @@ import net.minecraft.registry.tag.TagKey;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.tarlaboratories.tartech.chemistry.Chemical;
-import org.tarlaboratories.tartech.items.GasAnalyzerItem;
+import org.tarlaboratories.tartech.items.GasAnalyserItem;
 import org.tarlaboratories.tartech.items.RenderingItem;
 
 import java.util.Map;
@@ -31,7 +31,7 @@ public class ModItems {
     public static final Item GAS_TEST_ITEM = register(new Item(new Item.Settings().registryKey(GAS_TEST_ITEM_KEY)), GAS_TEST_ITEM_KEY);
 
     public static final RegistryKey<Item> GAS_ANALYSER_KEY = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(Tartech.MOD_ID, "gas_analyser"));
-    public static final GasAnalyzerItem GAS_ANALYZER_ITEM = register(new GasAnalyzerItem(new Item.Settings().registryKey(GAS_ANALYSER_KEY)), GAS_ANALYSER_KEY);
+    public static final GasAnalyserItem GAS_ANALYSER_ITEM = register(new GasAnalyserItem(new Item.Settings().registryKey(GAS_ANALYSER_KEY)), GAS_ANALYSER_KEY);
 
     public static final Map<Chemical, RegistryKey<Item>> CHEMICAL_FLUID_BUCKET_KEYS = Chemical.forEachChemical((chemical, properties) -> RegistryKey.of(RegistryKeys.ITEM, Identifier.of(Tartech.MOD_ID, "chemical_fluid_" + chemical.toIdentifierString() + "_bucket")));
     public static final Map<Chemical, Item> CHEMICAL_FLUID_BUCKETS = Chemical.forEachChemical((chemical, properties) -> register(new BucketItem(ModFluids.CHEMICAL_FLUIDS.get(chemical).getLeft(), new Item.Settings().registryKey(CHEMICAL_FLUID_BUCKET_KEYS.get(chemical))), CHEMICAL_FLUID_BUCKET_KEYS.get(chemical)));
@@ -53,7 +53,7 @@ public class ModItems {
         Registry.register(Registries.ITEM_GROUP, MAIN_ITEM_GROUP_KEY, MAIN_ITEM_GROUP);
         ItemGroupEvents.modifyEntriesEvent(MAIN_ITEM_GROUP_KEY).register((itemGroup) -> {
             itemGroup.add(TEST_ITEM);
-            itemGroup.add(GAS_ANALYZER_ITEM);
+            itemGroup.add(GAS_ANALYSER_ITEM);
             itemGroup.add(GAS_TEST_ITEM);
             itemGroup.add(ModBlocks.PIPE.asItem());
             itemGroup.add(ModBlocks.FULL_PIPE.asItem());
