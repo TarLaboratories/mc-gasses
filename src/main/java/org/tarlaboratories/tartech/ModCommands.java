@@ -136,7 +136,7 @@ public class ModCommands {
 
     public static void addHeat(ServerCommandSource source, BlockPos pos, double heat) {
         GasData.get(pos, source.getWorld()).addHeat(heat);
-        GasData.doLiquidCheckForChunk(source.getWorld(), pos);
+        GasData.updateVolumeAtPos(source.getWorld(), pos);
     }
 
     public static final Command<ServerCommandSource> ADD_HEAT_COMMAND = (context) -> {

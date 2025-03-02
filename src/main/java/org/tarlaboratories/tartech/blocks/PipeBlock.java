@@ -7,6 +7,7 @@ import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.world.ServerWorld;
@@ -204,5 +205,10 @@ public class PipeBlock extends BlockWithEntity implements Pipe {
     @Override
     public boolean isConnected(@NotNull BlockState state, Direction direction) {
         return state.get(this.getConnectionProperty(direction));
+    }
+
+    @Override
+    protected boolean canBucketPlace(BlockState state, Fluid fluid) {
+        return false;
     }
 }

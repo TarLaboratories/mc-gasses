@@ -17,6 +17,7 @@ import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.Chunk;
@@ -147,8 +148,9 @@ public class GasData {
         BlockState state = this.chunk.getBlockState(pos);
         for (Direction direction : List.of(Direction.UP, Direction.DOWN, Direction.EAST, Direction.WEST, Direction.NORTH, Direction.SOUTH)) {
             if (this.isAboveHeightLimit(pos.offset(direction))) continue;
-            if (this.isInSameChunk(pos.offset(direction)) && !state.isSideSolidFullSquare(this.chunk, pos, direction) &&
-                    !this.chunk.getBlockState(pos.offset(direction)).isSideSolidFullSquare(this.chunk, pos.offset(direction), direction.getOpposite())) out.add(pos.offset(direction));
+            BlockState neighbour = this.chunk.getBlockState(pos.offset(direction));
+            if (this.isInSameChunk(pos.offset(direction)) && (!this.chunk.getFluidState(pos).isEmpty() || !state.isSideSolidFullSquare(this.chunk, pos, direction)) &&
+                    (!this.chunk.getFluidState(pos.offset(direction)).isEmpty() || !neighbour.isSideSolidFullSquare(this.chunk, pos.offset(direction), direction.getOpposite()))) out.add(pos.offset(direction));
         }
         return out;
     }
@@ -257,19 +259,11 @@ public class GasData {
         return this.chunk.getHeightmap(Heightmap.Type.MOTION_BLOCKING).get(x, z);
     }
 
-    protected int getHighestY() {
-        int out = chunk.getBottomY();
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) out = Math.max(out, this.getHighestY(x, z));
-        }
-        return out;
-    }
-
     protected boolean canSeeSky(@NotNull BlockPos pos) {
         return this.getHighestY(pos.getX() - this.chunkPos.getStartX(), pos.getZ() - this.chunkPos.getStartZ()) <= pos.getY();
     }
 
-    protected Set<BlockPos> updateVolumeAtPos(@NotNull BlockPos pos) {
+    protected Set<BlockPos> updateVolumeAtPos(@NotNull BlockPos pos, ServerWorld world) {
         Set<BlockPos> connected_blocks = this.getConnectedBlocks(pos, this::canSeeSky);
         if (connected_blocks.stream().anyMatch(this::canSeeSky)) {
             return connected_blocks;
@@ -279,43 +273,35 @@ public class GasData {
         gasVolume.setRadioactivity(this.getDefaultGasVolume().getRadioactivity());
         for (BlockPos tmp_pos : connected_blocks) {
             gasVolume.mergeWith(this.getGasVolumeAt(tmp_pos).getPart(1));
-            FluidState fluid = chunk.getFluidState(tmp_pos);
-            if (fluid.isIn(ModFluids.CHEMICAL_FLUID_TAG) && fluid.isStill()) gasVolume.addLiquid(fluid);
             this.setVolumeIdAt(tmp_pos, max_volume_id + 1);
         }
         this.gas_data.put(max_volume_id + 1, gasVolume.unexposed());
         max_volume_id++;
-        return connected_blocks;
-    }
-
-    public void doLiquidCheck(ServerWorld world) {
-        for (int y = this.chunk.getBottomY(); y <= this.getHighestY(); y++) {
-            for (int x = 0; x < 16; x++) {
-                for (int z = 0; z < 16; z++) {
-                    BlockPos tmp_pos = this.chunkPos.getBlockPos(x, y, z);
-                    if (chunk.getBlockState(tmp_pos).isAir()) {
-                        this.getGasVolumeAt(tmp_pos).checkForLiquids();
-                        Pair<Chemical, Double> liquid = this.getGasVolumeAt(tmp_pos).getLiquidToBeLiquefied();
-                        if (liquid.getRight() >= 1) {
-                            this.chunk.setBlockState(tmp_pos, ModFluids.CHEMICAL_FLUIDS.get(liquid.getLeft()).getLeft().getDefaultState().getBlockState(), false);
-                            for (ServerPlayerEntity player : PlayerLookup.tracking(world, tmp_pos)) {
-                                ServerPlayNetworking.send(player, new GasCondensationPayload(tmp_pos, liquid.getLeft().toString()));
-                            }
-                        }
-                    } else if (chunk.getFluidState(tmp_pos).isIn(ModFluids.CHEMICAL_FLUID_TAG)) {
-                        FluidState fluidState = chunk.getFluidState(tmp_pos);
-                        Chemical chemical = ((ChemicalFluid)(fluidState.getFluid())).getChemical();
-                        if (chemical.getProperties().boilingTemperature() <= this.getGasVolumeAt(tmp_pos).getTemperature() && chemical.getProperties().canBeGas()) {
-                            if (fluidState.isStill()) this.getGasVolumeAt(tmp_pos).evaporateLiquid(chemical, 1);
-                            chunk.setBlockState(tmp_pos, Blocks.AIR.getDefaultState(), false);
-                            for (ServerPlayerEntity player : PlayerLookup.tracking(world, tmp_pos)) {
-                                ServerPlayNetworking.send(player, new LiquidEvaporationPayload(tmp_pos));
-                            }
+        for (Object o : connected_blocks.stream().sorted(Comparator.comparingInt(Vec3i::getY)).toArray()) {
+            if (o instanceof BlockPos tmp_pos) {
+                FluidState fluid = chunk.getFluidState(tmp_pos);
+                if (fluid.getFluid() instanceof ChemicalFluid chemicalFluid) {
+                    if (!chemicalFluid.getChemical().getProperties().canBeGas() || chemicalFluid.getChemical().getProperties().boilingTemperature() > gasVolume.getTemperature()) {
+                        if (fluid.isStill()) gasVolume.addLiquid(fluid);
+                    } else {
+                        if (fluid.isStill()) gasVolume.addGas(chemicalFluid.getChemical(), 1);
+                        chunk.setBlockState(tmp_pos, Blocks.AIR.getDefaultState(), false);
+                        for (ServerPlayerEntity player : PlayerLookup.tracking(world, tmp_pos)) {
+                            ServerPlayNetworking.send(player, new LiquidEvaporationPayload(tmp_pos));
                         }
                     }
                 }
-            }
+                if (gasVolume.to_be_liquefied.isEmpty() || !chunk.getBlockState(pos).isAir()) continue;
+                Pair<Chemical, Double> tmp = gasVolume.getLiquidToBeLiquefied();
+                if (Double.compare(tmp.getRight(), 1) >= 0) {
+                    chunk.setBlockState(tmp_pos, ModFluids.CHEMICAL_FLUIDS.get(tmp.getLeft()).getLeft().getDefaultState().getBlockState(), false);
+                    for (ServerPlayerEntity player : PlayerLookup.tracking(world, tmp_pos)) {
+                        ServerPlayNetworking.send(player, new GasCondensationPayload(tmp_pos, tmp.getLeft().toString()));
+                    }
+                }
+            } else LOGGER.error("wtf that shouldn't happen {}", o);
         }
+        return connected_blocks;
     }
 
     /**
@@ -330,13 +316,12 @@ public class GasData {
                 for (int y = this.chunk.getBottomY(); y <= this.getHighestY(x, z); y++) {
                     BlockPos tmp_pos = this.chunkPos.getBlockPos(x, y, z);
                     if (!this.canContainGas(tmp_pos)) this.setVolumeIdAt(tmp_pos, -1);
-                    else if (!tmp.contains(tmp_pos)) tmp.addAll(this.updateVolumeAtPos(tmp_pos));
+                    else if (!tmp.contains(tmp_pos)) tmp.addAll(this.updateVolumeAtPos(tmp_pos, world));
                 }
             }
         }
         this.old_max_volume_id = old_max_volume_id;
         this.needsUpdating = false;
-        doLiquidCheck(world);
     }
 
     /**
@@ -344,16 +329,12 @@ public class GasData {
      */
     @SuppressWarnings("unused")
     public static void updateVolumeAtPos(ServerWorld world, BlockPos pos) {
-        getEntityForChunk(world.getChunk(pos), world).updateVolumeAtPos(pos);
+        getEntityForChunk(world.getChunk(pos), world).updateVolumeAtPos(pos, world);
     }
 
     @SuppressWarnings("unused")
     public static void updateVolumesInChunk(ServerWorld world, BlockPos pos) {
         getEntityForChunk(world.getChunk(pos), world).updateVolumesInChunk(world);
-    }
-
-    public static void doLiquidCheckForChunk(ServerWorld world, BlockPos pos) {
-        getEntityForChunk(world.getChunk(pos), world).doLiquidCheck(world);
     }
 
     protected GasVolume getDefaultGasVolume() {
