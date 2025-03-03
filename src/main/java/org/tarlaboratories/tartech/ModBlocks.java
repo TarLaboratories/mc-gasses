@@ -11,6 +11,7 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.Identifier;
+import org.tarlaboratories.tartech.blocks.ComputerBlock;
 import org.tarlaboratories.tartech.blocks.FullPipeBlock;
 import org.tarlaboratories.tartech.blocks.PipeBlock;
 import org.tarlaboratories.tartech.blocks.PipeOpeningBlock;
@@ -40,6 +41,9 @@ public class ModBlocks {
 
     public static final RegistryKey<Block> PIPE_OPENING_KEY = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "pipe_opening"));
     public static final Block PIPE_OPENING = register(new PipeOpeningBlock(AbstractBlock.Settings.create().registryKey(PIPE_OPENING_KEY)), PIPE_OPENING_KEY, true);
+
+    public static final RegistryKey<Block> COMPUTER_BLOCK_KEY = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "computer"));
+    public static final Block COMPUTER_BLOCK = register(new ComputerBlock(AbstractBlock.Settings.create().registryKey(COMPUTER_BLOCK_KEY)), COMPUTER_BLOCK_KEY, true);
 
     public static void initialize() {}
 }

@@ -2,6 +2,9 @@ package org.tarlaboratories.tartech;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -9,7 +12,10 @@ import net.minecraft.util.ActionResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.tarlaboratories.tartech.events.BlockModificationCallback;
+import org.tarlaboratories.tartech.fluids.ChemicalFluid;
 import org.tarlaboratories.tartech.gas.GasData;
+import org.tarlaboratories.tartech.gas.GasVolume;
+import org.tarlaboratories.tartech.networking.LiquidEvaporationPayload;
 
 public class ModEventListeners {
     @SuppressWarnings("unused")
@@ -42,6 +48,15 @@ public class ModEventListeners {
                 player.setAir(StateSaverAndLoader.getPlayerData(player).getAir());
             }
         });
-        BlockModificationCallback.EVENT.register((world, pos) -> StateSaverAndLoader.getWorldState(world).getDataForChunk(world.getChunk(pos).getPos()).markDirty());
+        BlockModificationCallback.EVENT.register((world, pos) -> {
+            if (world.getFluidState(pos).getFluid() instanceof ChemicalFluid fluid) {
+                GasVolume gasVolume = GasData.get(pos, world);
+                if (fluid.getChemical().getProperties().canBeGas() && fluid.getChemical().getProperties().boilingTemperature() <= gasVolume.getTemperature()) {
+                    if (world.getFluidState(pos).isStill()) gasVolume.addGas(fluid.getChemical(), 1);
+                    world.setBlockState(pos, Blocks.AIR.getDefaultState());
+                    for (ServerPlayerEntity player : PlayerLookup.tracking(world, pos)) ServerPlayNetworking.send(player, new LiquidEvaporationPayload(pos));
+                }
+            } else StateSaverAndLoader.getWorldState(world).getDataForChunk(world.getChunk(pos).getPos()).markDirty();
+        });
     }
 }

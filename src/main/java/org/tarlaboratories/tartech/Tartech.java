@@ -8,6 +8,7 @@ public class Tartech implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        ModComponents.initialize();
         ModItems.initialize();
         ModBlocks.initialize();
         ModFluids.initialize();
