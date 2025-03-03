@@ -263,6 +263,44 @@ public class GasData {
         return this.getHighestY(pos.getX() - this.chunkPos.getStartX(), pos.getZ() - this.chunkPos.getStartZ()) <= pos.getY();
     }
 
+    protected void updateVolumeInPos(@NotNull BlockPos pos, ServerWorld world){
+        int prev_id = getGasVolumeIdAt(pos, world);
+
+        if (prev_id == -1) {
+            if (!canContainGas(pos)) return;
+            List<BlockPos> neighbours = this.getNeighboursWithSameGas(pos);
+            if(neighbours.isEmpty()) {
+                max_volume_id++;
+                setVolumeIdAt(pos, max_volume_id);
+                this.gas_data.put(max_volume_id, new GasVolume().addVolume(1));
+                return;
+            }
+
+            int max_size_id = getVolumeIdAt(neighbours.getFirst());
+            for (BlockPos tmp_pos : neighbours) {
+                if (getGasVolumeAt(tmp_pos).volume > gas_data.get(max_size_id).volume) {
+                    max_size_id = getVolumeIdAt(tmp_pos);
+                }
+            }
+
+            for(BlockPos tmp_pos : neighbours){
+                if(getVolumeIdAt(tmp_pos) == max_size_id) continue;
+                gas_data.get(max_size_id).mergeWith(getGasVolumeAt(tmp_pos));
+                setVolumeAtPos(tmp_pos,max_size_id);
+            }
+            gas_data.get(max_size_id).volume--;
+            return;
+        }
+        if(!canContainGas(pos)){
+            if(getGasVolumeAt(pos).volume <= 1){
+                gas_data.remove(getVolumeIdAt(pos));
+            }
+            setVolumeIdAt(pos,-1);
+        }
+
+    }
+
+
     protected Set<BlockPos> updateVolumeAtPos(@NotNull BlockPos pos, ServerWorld world) {
         Set<BlockPos> connected_blocks = this.getConnectedBlocks(pos, this::canSeeSky);
         if (connected_blocks.stream().anyMatch(this::canSeeSky)) {
