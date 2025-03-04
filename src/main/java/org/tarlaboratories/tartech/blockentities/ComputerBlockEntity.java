@@ -121,7 +121,7 @@ public class ComputerBlockEntity extends BlockEntity {
         File drive_dir = root.getParentFile();
         entity.thread = new Thread(threads, () -> {
             try {
-                int result = compiler.run(null, null, null, entrypoint.getAbsolutePath());
+                int result = compiler.run(System.in, System.out, System.err, entrypoint.getAbsolutePath());
                 if (result != 0) {
                     LOGGER.error("Compilation error, exiting");
                     return;
@@ -160,9 +160,9 @@ public class ComputerBlockEntity extends BlockEntity {
 
     private static class RestrictedClassLoader extends URLClassLoader {
         private static final Set<String> ALLOWED_PACKAGES = Set.of(
-                "java.lang.",
-                "root.",
-                "org.tarlaboratories.tartech.computer."
+                "java.lang.Object",
+                "org.tarlaboratories.tartech.computer.",
+                "java.lang.Throwable"
         );
 
         public RestrictedClassLoader(URL[] urls) {
@@ -171,15 +171,42 @@ public class ComputerBlockEntity extends BlockEntity {
 
         @Override
         public Class<?> loadClass(String name) throws ClassNotFoundException {
-            Class<?> cls = super.loadClass(name);
-            for (Method i : cls.getDeclaredMethods()) {
-                if (Modifier.isNative(i.getModifiers()) && !this.allowed(name)) throw new SecurityException(String.format("Class %s is not allowed", name));
-            }
-            return cls;
+            return validateClass(super.loadClass(name));
         }
 
-        public boolean allowed(String name) {
+        @Override
+        protected Class<?> findClass(String name) throws ClassNotFoundException {
+            return validateClass(super.findClass(name));
+        }
+
+        public boolean nativeAllowed(String name) {
             return ALLOWED_PACKAGES.stream().anyMatch(name::startsWith);
+        }
+
+        public boolean allowed(Class<?> cls) {
+            for (Class<?> i : cls.getClasses()) {
+                LOGGER.info("idk: {}", i.getName());
+            }
+            if (nativeAllowed(cls.getName())) return true;
+            for (Method i : cls.getDeclaredMethods()) {
+                if (Modifier.isNative(i.getModifiers())) {
+                    LOGGER.warn("Not allowed native method: {}", i.getName());
+                    return false;
+
+                }
+            }
+            return true;
+        }
+
+        public Class<?> validateClass(Class<?> cls) {
+            LOGGER.info("Validating class: {}", cls.getName());
+            try {
+                ClassLoader.class.getDeclaredField("classes");
+            } catch (NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            }
+            if (allowed(cls)) return cls;
+            else throw new SecurityException(String.format("Class %s is not allowed", cls.getName()));
         }
     }
 }
