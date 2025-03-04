@@ -18,14 +18,9 @@ import org.tarlaboratories.tartech.blocks.ComputerBlock;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Set;
+import java.nio.file.FileSystems;
 import java.util.UUID;
 
 public class ComputerBlockEntity extends BlockEntity {
@@ -126,27 +121,44 @@ public class ComputerBlockEntity extends BlockEntity {
                     LOGGER.error("Compilation error, exiting");
                     return;
                 }
-                RestrictedClassLoader classLoader = new RestrictedClassLoader(new URL[]{drive_dir.toURI().toURL()});
-                Class<?> cls = Class.forName("root.Main", true, classLoader);
-                Object main = cls.getDeclaredConstructor().newInstance();
-                cls.getDeclaredMethod("main").invoke(main);
-            } catch (MalformedURLException e) {
-                LOGGER.error("This should not happen: {}", e.getMessage());
-            } catch (ClassNotFoundException e) {
-                LOGGER.error("Couldn't find Main class in computer at {}: {}", pos, e.getMessage());
-            } catch (NoSuchMethodException e) {
-                LOGGER.error("Cannot find main method in Main class from computer at {}: {}", pos, e.getMessage());
-            } catch (InvocationTargetException e) {
-                LOGGER.error("Error when invoking main method: {}", e.getMessage());
-            } catch (IllegalAccessException e) {
-                LOGGER.error("Error when accessing main method: {}", e.getMessage());
-            } catch (InstantiationException e) {
-                LOGGER.error("Error when instantiating Main class: {}", e.getMessage());
+                startJVM("root.Main", drive_dir);
             } catch (ClassFormatError e) {
                 LOGGER.warn("Class format error, most probably caused by a previous thread not finishing compilation: {}", e.getMessage());
             }
         });
         entity.thread.start();
+    }
+
+    private static void startJVM(String cls, File root) {
+        String max_memory = "1G";
+        String separator = FileSystems.getDefault().getSeparator();
+        String classpath = System.getProperty("java.class.path").concat(":.");
+        String path = System.getProperty("java.home")
+                + separator + "bin" + separator + "java";
+        ProcessBuilder processBuilder =
+                new ProcessBuilder(path, "-cp",
+                        classpath,
+                        "-Xmx".concat(max_memory),
+                        "-Djava.security.manager",
+                        "-Djava.security.policy=java.policy",
+                        cls);
+        try {
+            processBuilder.directory(root);
+            File output = new File(root, "out");
+            File error = new File(root, "err");
+            File policy_file = new File(root, "java.policy");
+            boolean success = policy_file.createNewFile();
+            if (!success) LOGGER.debug("Didn't create a new policy file, because it already exists");
+            FileWriter policy = new FileWriter(policy_file);
+            policy.write("grant {permission java.io.FilePermission \"${user.dir}\", \"read,write\";};");
+            policy.close();
+            processBuilder.redirectOutput(output).redirectError(error);
+            LOGGER.info("Starting JVM: {}", processBuilder.command());
+            Process process = processBuilder.start();
+            process.waitFor();
+        } catch (IOException e) {
+            LOGGER.error("Failed to start JVM: {}", e.getMessage());
+        } catch (InterruptedException ignored) {}
     }
 
     public ItemStack getDrive() {
@@ -156,57 +168,5 @@ public class ComputerBlockEntity extends BlockEntity {
     public void setDrive(@NotNull ItemStack newDrive) {
         this.drive = newDrive.copy();
         markDirty();
-    }
-
-    private static class RestrictedClassLoader extends URLClassLoader {
-        private static final Set<String> ALLOWED_PACKAGES = Set.of(
-                "java.lang.Object",
-                "org.tarlaboratories.tartech.computer.",
-                "java.lang.Throwable"
-        );
-
-        public RestrictedClassLoader(URL[] urls) {
-            super(urls);
-        }
-
-        @Override
-        public Class<?> loadClass(String name) throws ClassNotFoundException {
-            return validateClass(super.loadClass(name));
-        }
-
-        @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            return validateClass(super.findClass(name));
-        }
-
-        public boolean nativeAllowed(String name) {
-            return ALLOWED_PACKAGES.stream().anyMatch(name::startsWith);
-        }
-
-        public boolean allowed(Class<?> cls) {
-            for (Class<?> i : cls.getClasses()) {
-                LOGGER.info("idk: {}", i.getName());
-            }
-            if (nativeAllowed(cls.getName())) return true;
-            for (Method i : cls.getDeclaredMethods()) {
-                if (Modifier.isNative(i.getModifiers())) {
-                    LOGGER.warn("Not allowed native method: {}", i.getName());
-                    return false;
-
-                }
-            }
-            return true;
-        }
-
-        public Class<?> validateClass(Class<?> cls) {
-            LOGGER.info("Validating class: {}", cls.getName());
-            try {
-                ClassLoader.class.getDeclaredField("classes");
-            } catch (NoSuchFieldException e) {
-                throw new RuntimeException(e);
-            }
-            if (allowed(cls)) return cls;
-            else throw new SecurityException(String.format("Class %s is not allowed", cls.getName()));
-        }
     }
 }
