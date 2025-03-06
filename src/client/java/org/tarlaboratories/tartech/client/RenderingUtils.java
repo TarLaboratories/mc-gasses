@@ -10,7 +10,7 @@ import net.minecraft.item.ModelTransformationMode;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
-import org.tarlaboratories.tartech.ModItems;
+import org.tarlaboratories.tartech.items.ModItems;
 
 public class RenderingUtils {
     private static BlockPos previous_highlight = null;

@@ -14,39 +14,33 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.tarlaboratories.tartech.networking.ChemicalNetworkIdChangePayload;
 
-public class PipeBlockEntity extends BlockEntity {
-    private int chemical_network_id;
+public class CableBlockEntity extends BlockEntity {
+    private int electrical_network_id;
 
-    public PipeBlockEntity(BlockPos pos, BlockState state) {
+    public CableBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PIPE, pos, state);
     }
 
-    public void setChemicalNetworkId(int id) {
-        if (this.chemical_network_id != id) markDirty();
-        this.chemical_network_id = id;
-        if (this.getWorld() instanceof ServerWorld serverWorld) {
-            for (ServerPlayerEntity player : PlayerLookup.tracking(serverWorld, this.getPos())) {
-                ServerPlayNetworking.send(player, new ChemicalNetworkIdChangePayload(this.getPos(), id));
-            }
-        }
+    public void setElectricalNetworkId(int id) {
+        if (this.electrical_network_id != id) markDirty();
+        this.electrical_network_id = id;
     }
 
-    public int getChemicalNetworkId() {
-        return this.chemical_network_id;
+    public int getElectricalNetworkId() {
+        return this.electrical_network_id;
     }
 
     @Override
     protected void writeNbt(@NotNull NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        nbt.putInt("chemical_network_id", chemical_network_id);
+        nbt.putInt("electrical_network_id", electrical_network_id);
         super.writeNbt(nbt, registryLookup);
     }
 
     @Override
     protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
         super.readNbt(nbt, registryLookup);
-        this.setChemicalNetworkId(nbt.getInt("chemical_network_id"));
+        this.setElectricalNetworkId(nbt.getInt("electrical_network_id"));
     }
 
     @Nullable

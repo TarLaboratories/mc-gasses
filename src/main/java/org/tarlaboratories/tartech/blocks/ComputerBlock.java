@@ -17,7 +17,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import org.tarlaboratories.tartech.ModBlockEntities;
+import org.tarlaboratories.tartech.blockentities.ModBlockEntities;
 import org.tarlaboratories.tartech.blockentities.ComputerBlockEntity;
 
 public class ComputerBlock extends BlockWithEntity {

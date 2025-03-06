@@ -1,4 +1,4 @@
-package org.tarlaboratories.tartech.blocks;
+package org.tarlaboratories.tartech.blocks.cables;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
@@ -7,8 +7,8 @@ import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
 
-public class FullPipeBlock extends PipeBlock {
-    public FullPipeBlock(Settings settings) {
+public class FullCableBlock extends CableBlock {
+    public FullCableBlock(Settings settings) {
         super(settings);
     }
 

@@ -1,4 +1,4 @@
-package org.tarlaboratories.tartech.blocks;
+package org.tarlaboratories.tartech.blocks.pipes;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.block.Block;

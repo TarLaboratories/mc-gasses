@@ -1,4 +1,4 @@
-package org.tarlaboratories.tartech.blocks;
+package org.tarlaboratories.tartech.blocks.pipes;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.block.Block;
@@ -20,7 +20,7 @@ import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.tarlaboratories.tartech.ModBlockEntities;
+import org.tarlaboratories.tartech.blockentities.ModBlockEntities;
 import org.tarlaboratories.tartech.blockentities.PipeOpeningBlockEntity;
 
 import java.util.Map;

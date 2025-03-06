@@ -1,4 +1,4 @@
-package org.tarlaboratories.tartech;
+package org.tarlaboratories.tartech.fluids;
 
 import net.minecraft.fluid.Fluid;
 import net.minecraft.registry.Registries;
@@ -7,8 +7,8 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
+import org.tarlaboratories.tartech.Tartech;
 import org.tarlaboratories.tartech.chemistry.Chemical;
-import org.tarlaboratories.tartech.fluids.ChemicalFluid;
 
 import java.util.Map;
 

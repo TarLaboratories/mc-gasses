@@ -26,7 +26,7 @@ import net.minecraft.world.dimension.DimensionTypes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.tarlaboratories.tartech.ModFluids;
+import org.tarlaboratories.tartech.fluids.ModFluids;
 import org.tarlaboratories.tartech.StateSaverAndLoader;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 import org.tarlaboratories.tartech.fluids.ChemicalFluid;

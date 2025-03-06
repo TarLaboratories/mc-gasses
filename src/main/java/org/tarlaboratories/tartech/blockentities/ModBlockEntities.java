@@ -1,4 +1,4 @@
-package org.tarlaboratories.tartech;
+package org.tarlaboratories.tartech.blockentities;
 
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.block.Block;
@@ -7,9 +7,8 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
-import org.tarlaboratories.tartech.blockentities.ComputerBlockEntity;
-import org.tarlaboratories.tartech.blockentities.PipeBlockEntity;
-import org.tarlaboratories.tartech.blockentities.PipeOpeningBlockEntity;
+import org.tarlaboratories.tartech.Tartech;
+import org.tarlaboratories.tartech.blocks.ModBlocks;
 
 public class ModBlockEntities {
     private static <T extends BlockEntity> BlockEntityType<T> register(String name,

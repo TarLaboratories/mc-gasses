@@ -7,9 +7,8 @@ import net.minecraft.item.Item;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.Properties;
 import org.jetbrains.annotations.NotNull;
-import org.tarlaboratories.tartech.ModBlocks;
-import org.tarlaboratories.tartech.ModFluids;
-import org.tarlaboratories.tartech.ModItems;
+import org.tarlaboratories.tartech.blocks.ModBlocks;
+import org.tarlaboratories.tartech.items.ModItems;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 
 public abstract class ChemicalFluid extends AbstractFluid {

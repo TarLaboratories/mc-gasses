@@ -1,4 +1,4 @@
-package org.tarlaboratories.tartech;
+package org.tarlaboratories.tartech.items;
 
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
@@ -13,9 +13,10 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import org.tarlaboratories.tartech.fluids.ModFluids;
+import org.tarlaboratories.tartech.Tartech;
+import org.tarlaboratories.tartech.blocks.ModBlocks;
 import org.tarlaboratories.tartech.chemistry.Chemical;
-import org.tarlaboratories.tartech.items.GasAnalyserItem;
-import org.tarlaboratories.tartech.items.RenderingItem;
 
 import java.util.Map;
 
@@ -58,6 +59,8 @@ public class ModItems {
             itemGroup.add(ModBlocks.PIPE.asItem());
             itemGroup.add(ModBlocks.FULL_PIPE.asItem());
             itemGroup.add(ModBlocks.PIPE_OPENING.asItem());
+            itemGroup.add(ModBlocks.CABLE.asItem());
+            itemGroup.add(ModBlocks.FULL_CABLE.asItem());
             for (Item bucket : CHEMICAL_FLUID_BUCKETS.values()) itemGroup.add(bucket);
         });
     }

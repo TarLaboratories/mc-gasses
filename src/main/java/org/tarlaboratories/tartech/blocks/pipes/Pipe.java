@@ -1,4 +1,4 @@
-package org.tarlaboratories.tartech.blocks;
+package org.tarlaboratories.tartech.blocks.pipes;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.state.property.BooleanProperty;

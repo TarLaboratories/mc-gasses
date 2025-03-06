@@ -6,10 +6,8 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.tarlaboratories.tartech.ChemicalNetwork;
-import org.tarlaboratories.tartech.ModBlockEntities;
 import org.tarlaboratories.tartech.StateSaverAndLoader;
-import org.tarlaboratories.tartech.blocks.Pipe;
-import org.tarlaboratories.tartech.blocks.PipeOpeningBlock;
+import org.tarlaboratories.tartech.blocks.pipes.Pipe;
 import org.tarlaboratories.tartech.gas.GasData;
 import org.tarlaboratories.tartech.gas.GasVolume;
 

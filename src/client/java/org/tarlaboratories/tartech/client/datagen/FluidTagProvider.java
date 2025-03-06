@@ -6,7 +6,7 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.RegistryWrapper;
 
-import org.tarlaboratories.tartech.ModFluids;
+import org.tarlaboratories.tartech.fluids.ModFluids;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 
 import java.util.concurrent.CompletableFuture;
