@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.tarlaboratories.tartech.ElectricalNetwork;
 import org.tarlaboratories.tartech.ModComponents;
 import org.tarlaboratories.tartech.blocks.ComputerBlock;
 
@@ -21,8 +22,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-public class ComputerBlockEntity extends BlockEntity {
+public class ComputerBlockEntity extends BlockEntity implements ElectricalNetworkInteractor {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
     private static final File DRIVES_ROOT = new File("drives");
@@ -30,6 +33,8 @@ public class ComputerBlockEntity extends BlockEntity {
     private @Nullable Thread thread;
     private @Nullable File root;
     private @NotNull ItemStack drive;
+    private Supplier<ElectricalNetwork> getElectricalNetwork;
+    private Consumer<ElectricalNetworkInteractor> onChangedPowerDraw;
 
     static {
         if (!DRIVES_ROOT.exists()) {
@@ -58,10 +63,16 @@ public class ComputerBlockEntity extends BlockEntity {
         if (this.thread != null && this.thread.isAlive()) {
             this.thread.interrupt();
             this.thread = null;
+            this.onChangedPowerDraw();
         }
     }
 
-    public static void tick(World world, BlockPos pos, BlockState state, ComputerBlockEntity entity) {
+    public static void tick(World world, BlockPos pos, BlockState state, @NotNull ComputerBlockEntity entity) {
+        if (entity.getEnergySatisfaction() < 1) {
+            world.setBlockState(pos, state.with(ComputerBlock.IS_ON, false));
+            entity.turnOff();
+            return;
+        }
         if (!state.get(ComputerBlock.IS_ON)) {
             entity.turnOff();
             return;
@@ -97,6 +108,7 @@ public class ComputerBlockEntity extends BlockEntity {
             LOGGER.info("Computer thread stopped.");
             world.setBlockState(pos, state.with(ComputerBlock.IS_ON, false));
             entity.thread = null;
+            entity.onChangedPowerDraw();
             return;
         }
         File entrypoint = new File(root, "Main.java");
@@ -115,7 +127,7 @@ public class ComputerBlockEntity extends BlockEntity {
         File drive_dir = root.getParentFile();
         entity.thread = new Thread(threads, () -> {
             try {
-                int result = compiler.run(System.in, System.out, System.err, entrypoint.getAbsolutePath());
+                int result = compiler.run(System.in, System.out, System.err, entrypoint.getPath());
                 if (result != 0) {
                     LOGGER.error("Compilation error, exiting");
                     return;
@@ -125,7 +137,23 @@ public class ComputerBlockEntity extends BlockEntity {
                 LOGGER.warn("Class format error, most probably caused by a previous thread not finishing compilation: {}", e.getMessage());
             }
         });
+        entity.onChangedPowerDraw();
         entity.thread.start();
+    }
+
+    private @Nullable ElectricalNetwork getElectricalNetwork() {
+        if (this.getElectricalNetwork != null) return this.getElectricalNetwork.get();
+        else return null;
+    }
+
+    private double getEnergySatisfaction() {
+        ElectricalNetwork tmp = this.getElectricalNetwork();
+        if (tmp == null) return 0;
+        else return tmp.getSatisfaction();
+    }
+
+    private void onChangedPowerDraw() {
+        if (this.onChangedPowerDraw != null) this.onChangedPowerDraw.accept(this);
     }
 
     private static void startJVM(String cls, File root) {
@@ -167,5 +195,20 @@ public class ComputerBlockEntity extends BlockEntity {
     public void setDrive(@NotNull ItemStack newDrive) {
         this.drive = newDrive.copy();
         markDirty();
+    }
+
+    @Override
+    public double getPowerDraw() {
+        return this.thread == null ? 0 : 700;
+    }
+
+    @Override
+    public void setModifiedCallback(Consumer<ElectricalNetworkInteractor> callback) {
+        this.onChangedPowerDraw = callback;
+    }
+
+    @Override
+    public void setElectricalNetworkGetter(Supplier<ElectricalNetwork> getter) {
+        this.getElectricalNetwork = getter;
     }
 }

@@ -8,9 +8,7 @@ import net.minecraft.block.ShapeContext;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.EnumProperty;
 import net.minecraft.util.math.BlockPos;
@@ -49,14 +47,6 @@ public class PipeOpeningBlock extends BlockWithEntity implements PipeConnectable
     @Override
     public BlockState getPlacementState(@NotNull ItemPlacementContext context) {
         return getDefaultState().with(ATTACHED_TO, context.getSide().getOpposite());
-    }
-
-    @Override
-    public void onPlaced(@NotNull World world, @NotNull BlockPos pos, @NotNull BlockState state, LivingEntity placer, ItemStack itemStack) {
-        BlockState state2 = world.getBlockState(pos.offset(state.get(ATTACHED_TO)));
-        if (state2.getBlock() instanceof Pipe pipe) {
-            world.setBlockState(pos.offset(state.get(ATTACHED_TO)), state2.withIfExists(pipe.getConnectionProperty(state.get(ATTACHED_TO).getOpposite()), true));
-        }
     }
 
     @Override

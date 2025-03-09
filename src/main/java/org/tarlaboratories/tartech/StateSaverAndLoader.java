@@ -17,7 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.tarlaboratories.tartech.blockentities.CableBlockEntity;
 import org.tarlaboratories.tartech.blockentities.PipeBlockEntity;
 import org.tarlaboratories.tartech.chemistry.Chemical;
 import org.tarlaboratories.tartech.gas.GasData;
@@ -33,7 +32,6 @@ public class StateSaverAndLoader extends PersistentState {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final Codec<Map<UUID, PlayerData>> PLAYER_DATA_CODEC = Codec.unboundedMap(Uuids.STRING_CODEC, PlayerData.CODEC);
     private static final Codec<Map<Integer, ChemicalNetwork>> CHEMICAL_NETWORK_DATA_CODEC = Codec.unboundedMap(Codec.STRING.xmap(Integer::parseInt, Object::toString), ChemicalNetwork.CODEC);
-    private static final Codec<Map<Integer, ElectricalNetwork>> ELECTRICAL_NETWORK_DATA_CODEC = Codec.unboundedMap(Codec.STRING.xmap(Integer::parseInt, Object::toString), ElectricalNetwork.CODEC);
     @SuppressWarnings("FieldMayBeFinal")
     private Map<ChunkPos, GasData> data;
     private Map<UUID, PlayerData> player_data;
@@ -62,7 +60,9 @@ public class StateSaverAndLoader extends PersistentState {
             nbt.put(chunkPosToString.apply(chunkPos), GasData.CODEC.encodeStart(NbtOps.INSTANCE, this.data.get(chunkPos)).getOrThrow());
         }
         nbt.put("chemical_network_data", CHEMICAL_NETWORK_DATA_CODEC.encodeStart(NbtOps.INSTANCE, this.chemical_network_data).getOrThrow());
-        nbt.put("electrical_network_data", ELECTRICAL_NETWORK_DATA_CODEC.encodeStart(NbtOps.INSTANCE, this.electrical_network_data).getOrThrow());
+        NbtCompound tmp = new NbtCompound();
+        for (Integer i : this.electrical_network_data.keySet()) tmp.put(i.toString(), this.electrical_network_data.get(i).toNbt());
+        nbt.put("electrical_network_data", tmp);
         nbt.putInt("max_chemical_network_id", max_chemical_network_id);
         nbt.put("player_data", PLAYER_DATA_CODEC.encodeStart(NbtOps.INSTANCE, this.player_data).getOrThrow());
         return nbt;
@@ -73,7 +73,7 @@ public class StateSaverAndLoader extends PersistentState {
         state.nbt = nbt;
         state.player_data = new HashMap<>(PLAYER_DATA_CODEC.decode(NbtOps.INSTANCE, nbt.get("player_data")).result().orElseThrow().getFirst());
         state.chemical_network_data = new HashMap<>(CHEMICAL_NETWORK_DATA_CODEC.decode(NbtOps.INSTANCE, nbt.get("chemical_network_data")).result().orElseThrow().getFirst());
-        state.electrical_network_data = new HashMap<>(ELECTRICAL_NETWORK_DATA_CODEC.decode(NbtOps.INSTANCE, nbt.get("electrical_network_data")).result().orElseThrow().getFirst());
+        state.electrical_network_data = new HashMap<>();
         state.max_chemical_network_id = nbt.getInt("max_chemical_network_id");
         return state;
     }
@@ -175,15 +175,13 @@ public class StateSaverAndLoader extends PersistentState {
         return max_electrical_network_id;
     }
 
-    public @Nullable ElectricalNetwork getElectricalNetwork(int id) {
+    public @Nullable ElectricalNetwork getElectricalNetwork(Integer id) {
+        if (this.electrical_network_data.containsKey(id)) return this.electrical_network_data.get(id);
+        if (this.nbt == null) return null;
+        NbtCompound tmp = this.nbt.getCompound("electrical_network_data");
+        if (!tmp.contains(id.toString())) return null;
+        this.electrical_network_data.put(id, ElectricalNetwork.load(java.util.Objects.requireNonNull(tmp.getCompound(id.toString())), world));
         return this.electrical_network_data.get(id);
-    }
-
-    public @Nullable ElectricalNetwork getElectricalNetwork(BlockPos pos) {
-        if (this.world.getBlockEntity(pos) instanceof CableBlockEntity entity) {
-            return this.getElectricalNetwork(entity.getElectricalNetworkId());
-        }
-        return null;
     }
 
     public void deleteElectricalNetwork(int id) {

@@ -15,12 +15,14 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.tarlaboratories.tartech.blockentities.ModBlockEntities;
 import org.tarlaboratories.tartech.blockentities.ComputerBlockEntity;
+import org.tarlaboratories.tartech.blocks.cables.CableConnectable;
 
-public class ComputerBlock extends BlockWithEntity {
+public class ComputerBlock extends BlockWithEntity implements CableConnectable {
     public static final BooleanProperty IS_ON = BooleanProperty.of("is_on");
 
     public ComputerBlock(Settings settings) {
@@ -67,5 +69,20 @@ public class ComputerBlock extends BlockWithEntity {
     @Override
     protected MapCodec<? extends BlockWithEntity> getCodec() {
         return createCodec(ComputerBlock::new);
+    }
+
+    @Override
+    public boolean shouldConnect(BlockState state, Direction direction) {
+        return true;
+    }
+
+    @Override
+    public boolean shouldAutoConnect(BlockState state, Direction direction) {
+        return true;
+    }
+
+    @Override
+    public boolean isConnected(BlockState state, Direction direction) {
+        return true;
     }
 }

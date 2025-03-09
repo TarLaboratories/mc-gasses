@@ -8,6 +8,7 @@ import net.minecraft.world.World;
 import org.tarlaboratories.tartech.ChemicalNetwork;
 import org.tarlaboratories.tartech.StateSaverAndLoader;
 import org.tarlaboratories.tartech.blocks.pipes.Pipe;
+import org.tarlaboratories.tartech.blocks.pipes.PipeOpeningBlock;
 import org.tarlaboratories.tartech.gas.GasData;
 import org.tarlaboratories.tartech.gas.GasVolume;
 

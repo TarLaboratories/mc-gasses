@@ -1,7 +1,5 @@
 package org.tarlaboratories.tartech.blockentities;
 
-import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.nbt.NbtCompound;
@@ -9,8 +7,6 @@ import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +15,7 @@ public class CableBlockEntity extends BlockEntity {
     private int electrical_network_id;
 
     public CableBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.PIPE, pos, state);
+        super(ModBlockEntities.CABLE, pos, state);
     }
 
     public void setElectricalNetworkId(int id) {

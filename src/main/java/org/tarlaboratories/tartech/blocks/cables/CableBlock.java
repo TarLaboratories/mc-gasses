@@ -30,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import org.tarlaboratories.tartech.ElectricalNetwork;
 import org.tarlaboratories.tartech.StateSaverAndLoader;
 import org.tarlaboratories.tartech.blockentities.CableBlockEntity;
-import org.tarlaboratories.tartech.blockentities.PipeBlockEntity;
+import org.tarlaboratories.tartech.blockentities.ElectricalNetworkInteractor;
 
 import java.util.*;
 
@@ -83,7 +83,7 @@ public class CableBlock extends BlockWithEntity implements Cable {
     @Override
     protected BlockState getStateForNeighborUpdate(BlockState state, WorldView world, ScheduledTickView ticks, BlockPos pos, Direction direction, BlockPos neighborPos, @NotNull BlockState neighborState, Random random) {
         if (neighborState.isAir()) return state.with(this.getConnectionProperty(direction), false);
-        if (neighborState.getBlock() instanceof Cable pipe && (pipe.isConnected(neighborState, direction.getOpposite()) || pipe.shouldAutoConnect(neighborState, direction.getOpposite()))) return state.with(this.getConnectionProperty(direction), true);
+        if (neighborState.getBlock() instanceof CableConnectable pipe && (pipe.isConnected(neighborState, direction.getOpposite()) || pipe.shouldAutoConnect(neighborState, direction.getOpposite()))) return state.with(this.getConnectionProperty(direction), true);
         return state;
     }
 
@@ -148,7 +148,7 @@ public class CableBlock extends BlockWithEntity implements Cable {
 
     @Override
     public @Nullable BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
-        return new PipeBlockEntity(pos, state);
+        return new CableBlockEntity(pos, state);
     }
 
     @Override
@@ -156,7 +156,6 @@ public class CableBlock extends BlockWithEntity implements Cable {
         if (world instanceof ServerWorld serverWorld) {
             if (this.getConnectedBlocks(state, world, pos).isEmpty()) {
                 ((CableBlockEntity) Objects.requireNonNull(world.getBlockEntity(pos))).setElectricalNetworkId(StateSaverAndLoader.getWorldState(serverWorld).createElectricalNetwork());
-                //Objects.requireNonNull(StateSaverAndLoader.getWorldState(serverWorld).getElectricalNetwork(pos)).addVolume(1);
             } else setNewElectricalNetworkId(pos, serverWorld);
         }
     }

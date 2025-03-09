@@ -82,7 +82,7 @@ public class PipeBlock extends BlockWithEntity implements Pipe {
     @Override
     protected BlockState getStateForNeighborUpdate(BlockState state, WorldView world, ScheduledTickView ticks, BlockPos pos, Direction direction, BlockPos neighborPos, @NotNull BlockState neighborState, Random random) {
         if (neighborState.isAir()) return state.with(this.getConnectionProperty(direction), false);
-        if (neighborState.getBlock() instanceof Pipe pipe && (pipe.isConnected(neighborState, direction.getOpposite()) || pipe.shouldAutoConnect(neighborState, direction.getOpposite()))) return state.with(this.getConnectionProperty(direction), true);
+        if (neighborState.getBlock() instanceof PipeConnectable pipe && (pipe.isConnected(neighborState, direction.getOpposite()) || pipe.shouldAutoConnect(neighborState, direction.getOpposite()))) return state.with(this.getConnectionProperty(direction), true);
         return state;
     }
 

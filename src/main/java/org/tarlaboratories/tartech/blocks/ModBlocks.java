@@ -53,5 +53,8 @@ public class ModBlocks {
     public static final RegistryKey<Block> FULL_CABLE_KEY = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "full_cable"));
     public static final Block FULL_CABLE = register(new FullCableBlock(AbstractBlock.Settings.create().registryKey(FULL_CABLE_KEY)), FULL_CABLE_KEY, true);
 
+    public static final RegistryKey<Block> CREATIVE_GENERATOR_KEY = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Tartech.MOD_ID, "creative_generator"));
+    public static final Block CREATIVE_GENERATOR = register(new CreativeGenerator(AbstractBlock.Settings.create().registryKey(CREATIVE_GENERATOR_KEY)), CREATIVE_GENERATOR_KEY, true);
+
     public static void initialize() {}
 }
