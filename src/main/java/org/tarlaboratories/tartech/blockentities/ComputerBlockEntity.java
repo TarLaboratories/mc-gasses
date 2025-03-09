@@ -61,6 +61,7 @@ public class ComputerBlockEntity extends BlockEntity implements ElectricalNetwor
 
     protected void turnOff() {
         if (this.thread != null && this.thread.isAlive()) {
+            LOGGER.info("Interrupting computer thread");
             this.thread.interrupt();
             this.thread = null;
             this.onChangedPowerDraw();
@@ -69,6 +70,7 @@ public class ComputerBlockEntity extends BlockEntity implements ElectricalNetwor
 
     public static void tick(World world, BlockPos pos, BlockState state, @NotNull ComputerBlockEntity entity) {
         if (entity.getEnergySatisfaction() < 1) {
+            if (entity.getEnergySatisfaction() > 0) LOGGER.info("Not enough energy, shutting down: {} < 1", entity.getEnergySatisfaction());
             world.setBlockState(pos, state.with(ComputerBlock.IS_ON, false));
             entity.turnOff();
             return;
@@ -209,6 +211,7 @@ public class ComputerBlockEntity extends BlockEntity implements ElectricalNetwor
 
     @Override
     public void setElectricalNetworkGetter(Supplier<ElectricalNetwork> getter) {
+        LOGGER.info("setElectricalNetworkGetter has been called");
         this.getElectricalNetwork = getter;
     }
 }

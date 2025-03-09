@@ -45,7 +45,7 @@ public class ComputerBlock extends BlockWithEntity implements CableConnectable {
                 player.giveOrDropStack(entity.getDrive());
                 entity.setDrive(ItemStack.EMPTY);
             } else {
-                world.setBlockState(pos, state.with(IS_ON, !state.get(IS_ON)));
+                world.setBlockState(pos, state.with(IS_ON, !state.get(IS_ON)), Block.FORCE_STATE);
             }
             return ActionResult.SUCCESS;
         }
