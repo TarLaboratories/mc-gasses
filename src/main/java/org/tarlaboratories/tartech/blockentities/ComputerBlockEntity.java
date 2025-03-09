@@ -71,7 +71,7 @@ public class ComputerBlockEntity extends BlockEntity implements ElectricalNetwor
     public static void tick(World world, BlockPos pos, BlockState state, @NotNull ComputerBlockEntity entity) {
         if (entity.getEnergySatisfaction() < 1) {
             if (entity.getEnergySatisfaction() > 0) LOGGER.info("Not enough energy, shutting down: {} < 1", entity.getEnergySatisfaction());
-            world.setBlockState(pos, state.with(ComputerBlock.IS_ON, false));
+            world.setBlockState(pos, state.with(ComputerBlock.IS_ON, false), ComputerBlock.FORCE_STATE);
             entity.turnOff();
             return;
         }
@@ -108,7 +108,7 @@ public class ComputerBlockEntity extends BlockEntity implements ElectricalNetwor
         if (entity.thread != null) {
             if (entity.thread.isAlive()) return;
             LOGGER.info("Computer thread stopped.");
-            world.setBlockState(pos, state.with(ComputerBlock.IS_ON, false));
+            world.setBlockState(pos, state.with(ComputerBlock.IS_ON, false), ComputerBlock.FORCE_STATE);
             entity.thread = null;
             entity.onChangedPowerDraw();
             return;
