@@ -1,7 +1,7 @@
 {
   "textures": {
-    "side": "tartech:block/pipe_end",
-    "particle": "tartech:block/pipe_end"
+    "side": "tartech:block/cable_end",
+    "particle": "tartech:block/cable_end"
   },
   "elements": [
     {

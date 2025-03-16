@@ -50,7 +50,8 @@ public class ComputerBlockEntity extends BlockEntity implements ElectricalNetwor
 
     @Override
     protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
-        drive = ItemStack.fromNbtOrEmpty(registries, (NbtCompound) nbt.get("drive"));
+        if (nbt.contains("drive")) drive = ItemStack.fromNbtOrEmpty(registries, nbt.getCompound("drive"));
+        else drive = ItemStack.EMPTY;
     }
 
     @Override

@@ -8,15 +8,18 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
+import net.minecraft.state.property.EnumProperty;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.tarlaboratories.tartech.blockentities.ModBlockEntities;
 import org.tarlaboratories.tartech.blockentities.ComputerBlockEntity;
@@ -24,9 +27,10 @@ import org.tarlaboratories.tartech.blocks.cables.CableConnectable;
 
 public class ComputerBlock extends BlockWithEntity implements CableConnectable {
     public static final BooleanProperty IS_ON = BooleanProperty.of("is_on");
+    public static final EnumProperty<Direction> FACING = EnumProperty.of("facing", Direction.class);
 
     public ComputerBlock(Settings settings) {
-        super(settings);
+        super(settings.solid());
         setDefaultState(getDefaultState().with(IS_ON, false));
     }
 
@@ -34,6 +38,7 @@ public class ComputerBlock extends BlockWithEntity implements CableConnectable {
     protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
         super.appendProperties(builder);
         builder.add(IS_ON);
+        builder.add(FACING);
     }
 
     @Override
@@ -84,5 +89,10 @@ public class ComputerBlock extends BlockWithEntity implements CableConnectable {
     @Override
     public boolean isConnected(BlockState state, Direction direction) {
         return true;
+    }
+
+    @Override
+    public BlockState getPlacementState(@NotNull ItemPlacementContext ctx) {
+        return this.getDefaultState().with(FACING, ctx.getPlayerLookDirection().getOpposite());
     }
 }

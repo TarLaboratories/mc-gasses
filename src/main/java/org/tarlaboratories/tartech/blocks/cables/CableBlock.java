@@ -210,4 +210,9 @@ public class CableBlock extends BlockWithEntity implements Cable {
     protected boolean canBucketPlace(BlockState state, Fluid fluid) {
         return false;
     }
+
+    @Override
+    protected boolean canReplace(BlockState state, ItemPlacementContext context) {
+        return false;
+    }
 }

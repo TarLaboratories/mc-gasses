@@ -1,12 +1,12 @@
 {
   "textures": {
-    "side": "tartech:block/pipe_end",
-    "particle": "tartech:block/pipe_end"
+    "side": "tartech:block/creative_generator",
+    "particle": "tartech:block/creative_generator"
   },
   "elements": [
     {
-      "from": [6, 6, 6],
-      "to": [10, 10, 10],
+      "from": [0, 0, 0],
+      "to": [16, 16, 16],
       "faces": {
         "up": {
           "texture": "#side"

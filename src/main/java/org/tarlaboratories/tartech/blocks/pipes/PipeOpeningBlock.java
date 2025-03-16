@@ -93,4 +93,9 @@ public class PipeOpeningBlock extends BlockWithEntity implements PipeConnectable
     public boolean isConnected(BlockState state, Direction direction) {
         return shouldConnect(state, direction);
     }
+
+    @Override
+    protected boolean canReplace(BlockState state, ItemPlacementContext context) {
+        return false;
+    }
 }

@@ -1,0 +1,9 @@
+{
+  "variants": {
+    "": {
+      "model": "tartech:block/full_cable",
+      "x": 0,
+      "y": 0
+    }
+  }
+}

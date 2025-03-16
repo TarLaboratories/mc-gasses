@@ -37,6 +37,9 @@ public class ModItems {
     public static final Map<Chemical, RegistryKey<Item>> CHEMICAL_FLUID_BUCKET_KEYS = Chemical.forEachChemical((chemical, properties) -> RegistryKey.of(RegistryKeys.ITEM, Identifier.of(Tartech.MOD_ID, "chemical_fluid_" + chemical.toIdentifierString() + "_bucket")));
     public static final Map<Chemical, Item> CHEMICAL_FLUID_BUCKETS = Chemical.forEachChemical((chemical, properties) -> register(new BucketItem(ModFluids.CHEMICAL_FLUIDS.get(chemical).getLeft(), new Item.Settings().registryKey(CHEMICAL_FLUID_BUCKET_KEYS.get(chemical))), CHEMICAL_FLUID_BUCKET_KEYS.get(chemical)));
 
+    public static final RegistryKey<Item> FLUID_STORAGE_KEY = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(Tartech.MOD_ID, "fluid_storage"));
+    public static final FluidStorageItem FLUID_STORAGE = register(new FluidStorageItem(new Item.Settings().registryKey(FLUID_STORAGE_KEY)), FLUID_STORAGE_KEY);
+
     public static final RegistryKey<Item> RENDERING_ITEM_KEY = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(Tartech.MOD_ID, "rendering_item"));
     public static final RenderingItem RENDERING_ITEM = register(new RenderingItem(new Item.Settings().registryKey(RENDERING_ITEM_KEY)), RENDERING_ITEM_KEY);
 
@@ -56,12 +59,16 @@ public class ModItems {
             itemGroup.add(TEST_ITEM);
             itemGroup.add(GAS_ANALYSER_ITEM);
             itemGroup.add(GAS_TEST_ITEM);
+            itemGroup.add(FLUID_STORAGE);
+            Chemical.forEachChemical((c, p) -> {
+                itemGroup.add(FLUID_STORAGE.getWithFluid(ModFluids.CHEMICAL_FLUIDS.get(c).getLeft(), 4));
+                return null;
+            });
             itemGroup.add(ModBlocks.PIPE.asItem());
             itemGroup.add(ModBlocks.FULL_PIPE.asItem());
             itemGroup.add(ModBlocks.PIPE_OPENING.asItem());
             itemGroup.add(ModBlocks.CABLE.asItem());
             itemGroup.add(ModBlocks.FULL_CABLE.asItem());
-            for (Item bucket : CHEMICAL_FLUID_BUCKETS.values()) itemGroup.add(bucket);
         });
     }
 }

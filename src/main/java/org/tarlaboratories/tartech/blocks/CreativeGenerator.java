@@ -12,7 +12,7 @@ import org.tarlaboratories.tartech.blocks.cables.CableConnectable;
 
 public class CreativeGenerator extends BlockWithEntity implements CableConnectable {
     protected CreativeGenerator(Settings settings) {
-        super(settings);
+        super(settings.solid());
     }
 
     @Override

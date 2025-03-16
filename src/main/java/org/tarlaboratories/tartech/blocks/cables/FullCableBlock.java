@@ -9,7 +9,7 @@ import net.minecraft.world.BlockView;
 
 public class FullCableBlock extends CableBlock {
     public FullCableBlock(Settings settings) {
-        super(settings);
+        super(settings.solid());
     }
 
     @Override

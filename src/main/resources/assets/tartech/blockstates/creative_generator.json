@@ -1,0 +1,9 @@
+{
+  "variants": {
+    "": {
+      "model": "tartech:block/creative_generator",
+      "x": 0,
+      "y": 0
+    }
+  }
+}

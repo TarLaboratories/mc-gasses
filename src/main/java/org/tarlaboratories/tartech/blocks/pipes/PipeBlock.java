@@ -211,4 +211,9 @@ public class PipeBlock extends BlockWithEntity implements Pipe {
     protected boolean canBucketPlace(BlockState state, Fluid fluid) {
         return false;
     }
+
+    @Override
+    protected boolean canReplace(BlockState state, ItemPlacementContext context) {
+        return false;
+    }
 }

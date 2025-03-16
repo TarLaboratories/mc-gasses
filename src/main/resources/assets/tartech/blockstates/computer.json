@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=up": {
+      "model": "tartech:block/computer",
+      "x": 0,
+      "y": 0
+    },
+    "facing=down": {
+      "model": "tartech:block/computer",
+      "x": 180,
+      "y": 0
+    },
+    "facing=north": {
+      "model": "tartech:block/computer",
+      "x": 90,
+      "y": 0
+    },
+    "facing=south": {
+      "model": "tartech:block/computer",
+      "x": 90,
+      "y": 180
+    },
+    "facing=east": {
+      "model": "tartech:block/computer",
+      "x": 90,
+      "y": 90
+    },
+    "facing=west": {
+      "model": "tartech:block/computer",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

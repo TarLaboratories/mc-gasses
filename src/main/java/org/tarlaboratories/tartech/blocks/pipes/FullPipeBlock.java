@@ -9,7 +9,7 @@ import net.minecraft.world.BlockView;
 
 public class FullPipeBlock extends PipeBlock {
     public FullPipeBlock(Settings settings) {
-        super(settings);
+        super(settings.solid());
     }
 
     @Override
